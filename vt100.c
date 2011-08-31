@@ -64,38 +64,50 @@ void vt100_parse_params(struct vt100_emul *vt100)
 void vt100_call_CSI(struct vt100_emul *vt100, char c)
 {
     if (c < 'A' || c > 'z')
-        return ;
-    if (((vt100_action *)vt100->csi_callbacks)[c - 'A'] == NULL)
-        return ;
+        goto leave;
+    if (((vt100_action *)&vt100->callbacks->csi)[c - 'A'] == NULL)
+        goto leave;
     vt100_parse_params(vt100);
-    ((vt100_action *)vt100->csi_callbacks)[c - 'A'](vt100);
+    ((vt100_action *)&vt100->callbacks->csi)[c - 'A'](vt100);
+leave:
+    vt100->argc = 0;
+    vt100->state = INIT;
 }
 
 void vt100_call_ESC(struct vt100_emul *vt100, char c)
 {
     if (c < '0' || c > 'z')
-        return ;
-    if (((vt100_action *)vt100->esc_callbacks)[c - '0'] == NULL)
-        return ;
-    ((vt100_action *)vt100->esc_callbacks)[c - '0'](vt100);
+        goto leave;
+    if (((vt100_action *)&vt100->callbacks->esc)[c - '0'] == NULL)
+        goto leave;
+    ((vt100_action *)&vt100->callbacks->esc)[c - '0'](vt100);
+leave:
+    vt100->argc = 0;
+    vt100->state = INIT;
 }
 
 void vt100_call_HASH(struct vt100_emul *vt100, char c)
 {
     if (c < '0' || c > '9')
-        return ;
-    if (((vt100_action *)vt100->hash_callbacks)[c - '0'] == NULL)
-        return ;
-    ((vt100_action *)vt100->hash_callbacks)[c - '0'](vt100);
+        goto leave;
+    if (((vt100_action *)&vt100->callbacks->hash)[c - '0'] == NULL)
+        goto leave;
+    ((vt100_action *)&vt100->callbacks->hash)[c - '0'](vt100);
+leave:
+    vt100->argc = 0;
+    vt100->state = INIT;
 }
 
 void vt100_call_GSET(struct vt100_emul *vt100, char c)
 {
     if (c < '0' || c > 'B')
-        return ;
-    if (((vt100_action *)vt100->scs_callbacks)[c - '0'] == NULL)
-        return ;
-    ((vt100_action *)vt100->scs_callbacks)[c - '0'](vt100);
+        goto leave;
+    if (((vt100_action *)&vt100->callbacks->scs)[c - '0'] == NULL)
+        goto leave;
+    ((vt100_action *)&vt100->callbacks->scs)[c - '0'](vt100);
+leave:
+    vt100->argc = 0;
+    vt100->state = INIT;
 }
 
 void vt100_read(struct vt100_emul *vt100, char c)
@@ -137,11 +149,15 @@ void vt100_read(struct vt100_emul *vt100, char c)
     }
 }
 
+void vt100_read_str(struct vt100_emul *vt100, char *c)
+{
+    while (*c)
+        vt100_read(vt100, *c++);
+}
+
 struct vt100_emul *vt100_init(unsigned int width, unsigned int height,
-                              struct vt100_ESC_callbacks *esc,
-                              struct vt100_CSI_callbacks *csi,
-                              struct vt100_HASH_callbacks *hash,
-                              struct vt100_SCS_callbacks *scs)
+                              struct vt100_callbacks *callbacks,
+                              void (*vtwrite)(struct vt100_emul *, char))
 {
     struct vt100_emul *vt100;
 
@@ -151,10 +167,8 @@ struct vt100_emul *vt100_init(unsigned int width, unsigned int height,
     vt100->cursor_pos_x = 0;
     vt100->cursor_pos_y = 0;
     vt100->stack_ptr = 0;
-    vt100->csi_callbacks = csi;
-    vt100->hash_callbacks = hash;
-    vt100->esc_callbacks = esc;
-    vt100->scs_callbacks = scs;
+    vt100->callbacks = callbacks;
     vt100->state = INIT;
+    vt100->write = vtwrite;
     return vt100;
 }

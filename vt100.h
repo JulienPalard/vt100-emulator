@@ -209,6 +209,14 @@ struct vt100_CSI_callbacks
     vt100_action CSI_z;
 };
 
+struct vt100_callbacks
+{
+    struct vt100_ESC_callbacks esc;
+    struct vt100_CSI_callbacks csi;
+    struct vt100_hash_callbacks hash;
+    struct vt100_SCS_callbacks scs;
+};
+
 struct vt100_emul
 {
     unsigned int           width;
@@ -221,17 +229,15 @@ struct vt100_emul
     void                   (*write)(struct vt100_emul *, char c);
     char                   stack[VT100_STACK_SIZE];
     unsigned int           stack_ptr;
-    struct vt100_CSI_callbacks  *csi_callbacks;
-    struct vt100_HASH_callbacks *hash_callbacks;
-    struct vt100_ESC_callbacks  *esc_callbacks;
-    struct vt100_SCS_callbacks  *scs_callbacks;
+    struct vt100_callbacks *callbacks;
+    void                   *user_data;
 };
 
 struct vt100_emul *vt100_init(unsigned int width, unsigned int height,
-                              struct vt100_ESC_callbacks *esc,
-                              struct vt100_CSI_callbacks *csi,
-                              struct vt100_HASH_callbacks *hash,
-                              struct vt100_SCS_callbacks *scs);
+                              struct vt100_callbacks *callbacks,
+                              void (*write)(struct vt100_emul *, char));
 
+void vt100_read(struct vt100_emul *vt100, char c);
+void vt100_read_str(struct vt100_emul *vt100, char *c);
 
 #endif
