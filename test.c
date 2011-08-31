@@ -24,7 +24,81 @@ struct headless_terminal
 void set(struct headless_terminal *term, unsigned int x, unsigned int y, char c)
 {
     term->screen[(term->top_line * term->width + x + term->width * y)
-                 % term->width * SCROLLBACK * term->height] = c;
+                 % (term->width * SCROLLBACK * term->height)] = c;
+}
+
+char get(struct headless_terminal *term, unsigned int x, unsigned int y)
+{
+    return term->screen[(term->top_line * term->width + x + term->width * y)
+                        % (term->width * SCROLLBACK * term->height)];
+}
+
+void my_putchar(char c)
+{
+    write(1, &c, 1);
+}
+
+void my_putnbr(int nb)
+{
+    if (nb >= 0)
+        nb = -nb;
+    else
+        my_putchar('-');
+    if (nb <= -10)
+        my_putnbr(-nb / 10);
+    my_putchar(-(nb % 10) + '0');
+}
+
+void dump(char *title, struct vt100_emul *vt100,
+          struct headless_terminal *term)
+{
+    unsigned int x;
+    unsigned int y;
+    char c;
+    char d;
+    int argc;
+
+    write(1, title, strlen(title));
+    write(1, " ", 1);
+    for (argc = 0; argc < vt100->argc; ++argc)
+    {
+        my_putnbr(vt100->argv[argc]);
+        if (argc != vt100->argc - 1)
+            write(1, ", ", 2);
+    }
+    write(1, "\n", 1);
+    for (x = 0; x < term->width + 1; ++x)
+        write(1, "-", 1);
+    write(1, "\n", 1);
+    for (y = 0; y < term->height; ++y)
+    {
+        write(1, "|", 1);
+        for (x = 0; x < term->width; ++x)
+        {
+            if (x == term->x && y == term->y)
+                write(1, "X", 1);
+            else
+            {
+                c = get(term, x, y);
+                if (c == '\0')
+                    c = ' ';
+                if (c > 31)
+                    write(1, &c, 1);
+                else
+                {
+                    d = '0' + c / 10;
+                    write(1, &d, 1);
+                    d = '0' + c % 10;
+                    write(1, &d, 1);
+                }
+            }
+        }
+        write(1, "|", 1);
+        write(1, "\n", 1);
+    }
+    for (x = 0; x < term->width + 2; ++x)
+        write(1, "-", 1);
+    write(1, "\n\n", 2);
 }
 
 /*
@@ -43,6 +117,7 @@ void DECSC(struct vt100_emul *vt100)
     term = (struct headless_terminal *)vt100->user_data;
     term->saved_x = term->x;
     term->saved_y = term->y;
+    dump("DECSC", vt100, term);
 }
 
 /*
@@ -61,6 +136,7 @@ void DECRC(struct vt100_emul *vt100)
     term = (struct headless_terminal *)vt100->user_data;
     term->x = term->saved_x;
     term->y = term->saved_y;
+    dump("DECRC", vt100, term);
 }
 
 /*
@@ -87,6 +163,7 @@ void IND(struct vt100_emul *vt100)
         /* Do not scroll, just move downward on the current display space */
         term->y += 1;
     }
+    dump("IND", vt100, term);
 }
 
 /*
@@ -114,6 +191,7 @@ void NEL(struct vt100_emul *vt100)
         term->y += 1;
     }
     term->x = 0;
+    dump("NEL", vt100, term);
 }
 
 /*
@@ -143,6 +221,7 @@ void CUU(struct vt100_emul *vt100)
         term->y -= arg0;
     else
         term->y = 0;
+    dump("CUU", vt100, term);
 }
 
 /*
@@ -172,6 +251,7 @@ void CUD(struct vt100_emul *vt100)
     term->y += arg0;
     if (term->y >= term->height)
         term->y = term->height - 1;
+    dump("CUD", vt100, term);
 }
 
 /*
@@ -200,6 +280,7 @@ void CUF(struct vt100_emul *vt100)
     term->x += arg0;
     if (term->x >= term->width)
         term->x = term->width - 1;
+    dump("CUF", vt100, term);
 }
 
 /*
@@ -229,6 +310,7 @@ void CUB(struct vt100_emul *vt100)
         term->x -= arg0;
     else
         term->x = 0;
+    dump("CUB", vt100, term);
 }
 
 /*
@@ -256,8 +338,8 @@ void CUP(struct vt100_emul *vt100)
     int arg1;
 
     term = (struct headless_terminal *)vt100->user_data;
-    arg0 = 1;
-    arg1 = 1;
+    arg0 = 0;
+    arg1 = 0;
     if (vt100->argc > 0)
         arg0 = vt100->argv[0] - 1;
     if (vt100->argc > 1)
@@ -268,6 +350,7 @@ void CUP(struct vt100_emul *vt100)
         arg1 = 0;
     term->y = arg0;
     term->x = arg1;
+    dump("CUP", vt100, term);
 }
 
 /*
@@ -319,6 +402,7 @@ void ED(struct vt100_emul *vt100)
             for (y = 0; y < term->height; ++y)
                 set(term, x, y, '\0');
     }
+    dump("ED", vt100, term);
 }
 
 /*
@@ -360,6 +444,7 @@ void EL(struct vt100_emul *vt100)
         for (x = 0; x < term->width; ++x)
             set(term, x, term->y, '\0');
     }
+    dump("EL", vt100, term);
 }
 
 /*
@@ -388,7 +473,26 @@ static void vt100_write(struct vt100_emul *vt100, char c __attribute__((unused))
     struct headless_terminal *term;
 
     term = (struct headless_terminal *)vt100->user_data;
-    printf("%c", c);
+    if (c == '\r')
+    {
+        term->x = 0;
+        return ;
+    }
+    if (c == '\n')
+    {
+        term->x = 0;
+        vt100->argc = 0;
+        CUD(vt100);
+        return ;
+    }
+    set(term, term->x, term->y, c);
+    term->x += 1;
+    if (term->x == term->width + 1)
+    {
+        term->x = 0;
+        term->y += 1;
+    }
+    /*dump("WRITE", term);*/
 }
 
 int main(void)
