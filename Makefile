@@ -11,7 +11,8 @@ OBJ = $(SRC:.c=.o)
 CC = gcc
 INCLUDE = .
 DEFINE = _GNU_SOURCE
-CFLAGS = -O3 -Wextra -Wall -ansi -pedantic -I$(INCLUDE)
+CFLAGS = -g3 -Wextra -Wstrict-prototypes -Wall -ansi -pedantic -I$(INCLUDE)
+LIB = -lutil
 RM = rm -f
 
 $(NAME):	$(OBJ)
@@ -24,6 +25,6 @@ all:
 		$(CC) -D $(DEFINE) -c $(CFLAGS) $< -o $(<:.c=.o)
 
 clean:
-		$(RM) $(NAME) *~ #*# *.o *.core
+		$(RM) $(NAME) *~ \#*\# *.o *.core
 
 re:		clean all
