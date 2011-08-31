@@ -43,22 +43,27 @@ void vt100_push(struct vt100_emul *vt100, char c)
 void vt100_parse_params(struct vt100_emul *vt100)
 {
     unsigned int i;
+    int got_something;
 
+    got_something = 0;
     vt100->argc = 0;
     vt100->argv[0] = 0;
     for (i = 0; i < vt100->stack_ptr; ++i)
     {
         if (vt100->stack[i] >= '0' && vt100->stack[i] <= '9')
         {
+            got_something = 1;
             vt100->argv[vt100->argc] = vt100->argv[vt100->argc] * 10
                 + vt100->stack[i] - '0';
         }
         else if (vt100->stack[i] == ';')
         {
+            got_something = 0;
             vt100->argc += 1;
             vt100->argv[vt100->argc] = 0;
         }
     }
+    vt100->argc += got_something;
 }
 
 void vt100_call_CSI(struct vt100_emul *vt100, char c)
@@ -70,8 +75,8 @@ void vt100_call_CSI(struct vt100_emul *vt100, char c)
     vt100_parse_params(vt100);
     ((vt100_action *)&vt100->callbacks->csi)[c - 'A'](vt100);
 leave:
-    vt100->argc = 0;
     vt100->state = INIT;
+    vt100->stack_ptr = 0;
 }
 
 void vt100_call_ESC(struct vt100_emul *vt100, char c)
@@ -82,8 +87,8 @@ void vt100_call_ESC(struct vt100_emul *vt100, char c)
         goto leave;
     ((vt100_action *)&vt100->callbacks->esc)[c - '0'](vt100);
 leave:
-    vt100->argc = 0;
     vt100->state = INIT;
+    vt100->stack_ptr = 0;
 }
 
 void vt100_call_HASH(struct vt100_emul *vt100, char c)
@@ -94,8 +99,8 @@ void vt100_call_HASH(struct vt100_emul *vt100, char c)
         goto leave;
     ((vt100_action *)&vt100->callbacks->hash)[c - '0'](vt100);
 leave:
-    vt100->argc = 0;
     vt100->state = INIT;
+    vt100->stack_ptr = 0;
 }
 
 void vt100_call_GSET(struct vt100_emul *vt100, char c)
@@ -106,8 +111,8 @@ void vt100_call_GSET(struct vt100_emul *vt100, char c)
         goto leave;
     ((vt100_action *)&vt100->callbacks->scs)[c - '0'](vt100);
 leave:
-    vt100->argc = 0;
     vt100->state = INIT;
+    vt100->stack_ptr = 0;
 }
 
 void vt100_read(struct vt100_emul *vt100, char c)
