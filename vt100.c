@@ -78,6 +78,7 @@ leave:
     vt100->state = INIT;
     vt100->flag = '\0';
     vt100->stack_ptr = 0;
+    vt100->argc = 0;
 }
 
 void vt100_call_ESC(struct vt100_emul *vt100, char c)
@@ -90,6 +91,7 @@ void vt100_call_ESC(struct vt100_emul *vt100, char c)
 leave:
     vt100->state = INIT;
     vt100->stack_ptr = 0;
+    vt100->argc = 0;
 }
 
 void vt100_call_HASH(struct vt100_emul *vt100, char c)
@@ -102,6 +104,7 @@ void vt100_call_HASH(struct vt100_emul *vt100, char c)
 leave:
     vt100->state = INIT;
     vt100->stack_ptr = 0;
+    vt100->argc = 0;
 }
 
 void vt100_call_GSET(struct vt100_emul *vt100, char c)
@@ -114,6 +117,7 @@ void vt100_call_GSET(struct vt100_emul *vt100, char c)
 leave:
     vt100->state = INIT;
     vt100->stack_ptr = 0;
+    vt100->argc = 0;
 }
 
 void vt100_read(struct vt100_emul *vt100, char c)
