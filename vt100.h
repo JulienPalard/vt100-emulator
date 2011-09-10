@@ -147,6 +147,8 @@ struct vt100_ESC_callbacks
 
 struct vt100_CSI_callbacks
 {
+    vt100_action CSI_3F; /*                          ESC [ ? */
+    vt100_action CSI_40; /*                          ESC [ @ */
     vt100_action CUU; /* [rw] Cursor Up              ESC [ Pn A */
     vt100_action CUD; /* [rw] Cursor Down            ESC [ Pn B */
     vt100_action CUF; /* [rw] Cursor Forward         ESC [ Pn C */
@@ -230,6 +232,7 @@ struct vt100_emul
     char                   stack[VT100_STACK_SIZE];
     unsigned int           stack_ptr;
     struct vt100_callbacks *callbacks;
+    char                   flag;
     void                   *user_data;
 };
 

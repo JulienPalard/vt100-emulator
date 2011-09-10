@@ -68,14 +68,15 @@ void vt100_parse_params(struct vt100_emul *vt100)
 
 void vt100_call_CSI(struct vt100_emul *vt100, char c)
 {
-    if (c < 'A' || c > 'z')
+    if (c < '?' || c > 'z')
         goto leave;
-    if (((vt100_action *)&vt100->callbacks->csi)[c - 'A'] == NULL)
+    if (((vt100_action *)&vt100->callbacks->csi)[c - '?'] == NULL)
         goto leave;
     vt100_parse_params(vt100);
-    ((vt100_action *)&vt100->callbacks->csi)[c - 'A'](vt100);
+    ((vt100_action *)&vt100->callbacks->csi)[c - '?'](vt100);
 leave:
     vt100->state = INIT;
+    vt100->flag = '\0';
     vt100->stack_ptr = 0;
 }
 
@@ -119,10 +120,10 @@ void vt100_read(struct vt100_emul *vt100, char c)
 {
     if (vt100->state == INIT)
     {
-        if (c != '\033')
-            vt100->write(vt100, c);
-        else
+        if (c == '\033')
             vt100->state = ESC;
+        else
+            vt100->write(vt100, c);
     }
     else if (vt100->state == ESC)
     {
@@ -147,7 +148,9 @@ void vt100_read(struct vt100_emul *vt100, char c)
     }
     else if (vt100->state == CSI)
     {
-        if (c == ';' || (c >= '0' && c <= '9'))
+        if (c == '?')
+            vt100->flag = '?';
+        else if (c == ';' || (c >= '0' && c <= '9'))
             vt100_push(vt100, c);
         else
             vt100_call_CSI(vt100, c);
