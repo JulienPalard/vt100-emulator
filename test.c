@@ -54,6 +54,27 @@ void my_putnbr(int nb)
     my_putchar(-(nb % 10) + '0');
 }
 
+int	my_putnbr_base(int nbr, char *base)
+{
+    int len;
+    int neg_flag;
+
+    len = -1;
+    neg_flag = 1;
+    while (*(base + ++len));
+    if (len < 2)
+        return (-1);
+    if (nbr < 0)
+    {
+        my_putchar('-');
+        neg_flag = -1;
+    }
+    if (nbr / len)
+        my_putnbr_base((nbr / len) * neg_flag, base);
+    my_putchar(base[(nbr % len) * neg_flag]);
+    return (nbr);
+}
+
 void my_strdump(char *str)
 {
     while (*str != '\0')
@@ -64,9 +85,8 @@ void my_strdump(char *str)
         }
         else
         {
-            write(1, "[", 1);
-            my_putnbr(*str);
-            write(1, "]", 1);
+            write(1, "\\0", 2);
+            my_putnbr_base(*str, "01234567");
         }
         str += 1;
     }
@@ -127,7 +147,8 @@ void dump(char *title, struct vt100_emul *vt100,
         if (argc != vt100->argc - 1)
             write(1, ", ", 2);
     }
-    disp(term);
+    write(1, "\n", 1);
+    /* disp(term); */
 }
 
 /*
@@ -169,6 +190,28 @@ void DECRC(struct vt100_emul *vt100)
 }
 
 /*
+DECALN – Screen Alignment Display (DEC Private)
+
+ESC # 8
+
+This command fills the entire screen area with uppercase Es for screen
+focus and alignment. This command is used by DEC manufacturing and
+Field Service personnel.
+*/
+void DECALN(struct vt100_emul *vt100)
+{
+    struct headless_terminal *term;
+    unsigned int x;
+    unsigned int y;
+
+    term = (struct headless_terminal *)vt100->user_data;
+    for (x = 0; x < term->width; ++x)
+        for (y = 0; y < term->height; ++y)
+            set(term, x, y, 'E');
+    dump("DEALN", vt100, term);
+}
+
+/*
 IND – Index
 
 ESC D
@@ -193,6 +236,32 @@ void IND(struct vt100_emul *vt100)
         term->y += 1;
     }
     dump("IND", vt100, term);
+}
+/*
+RI – Reverse Index
+
+ESC M
+
+Move the active position to the same horizontal position on the
+preceding line. If the active position is at the top margin, a scroll
+down is performed. Format Effector
+*/
+void RI(struct vt100_emul *vt100)
+{
+    struct headless_terminal *term;
+
+    term = (struct headless_terminal *)vt100->user_data;
+    if (term->y == 0)
+    {
+        /* SCROLL */
+        term->top_line = (term->top_line - 1) % (term->height * SCROLLBACK);
+    }
+    else
+    {
+        /* Do not scroll, just move upward on the current display space */
+        term->y -= 1;
+    }
+    dump("RI", vt100, term);
 }
 
 /*
@@ -514,6 +583,11 @@ static void vt100_write(struct vt100_emul *vt100, char c __attribute__((unused))
         NEL(vt100);
         return ;
     }
+    if (c == '\010' && term->x > 0)
+    {
+        term->x -= 1;
+        return ;
+    }
     set(term, term->x, term->y, c);
     term->x += 1;
     if (term->x == term->width + 1)
@@ -633,8 +707,10 @@ int main(int ac, char **av)
         callbacks.csi.CUB = (vt100_action)CUB;
         callbacks.esc.NEL = (vt100_action)NEL;
         callbacks.esc.IND = (vt100_action)IND;
+        callbacks.esc.RI = (vt100_action)RI;
         callbacks.esc.DECRC = (vt100_action)DECRC;
         callbacks.esc.DECSC = (vt100_action)DECSC;
+        callbacks.hash.DECALN = (vt100_action)DECALN;
 
         vt100 = vt100_init(80, 24, &callbacks, vt100_write);
         vt100->user_data = &terminal;
