@@ -432,6 +432,36 @@ void DECSTBM(struct vt100_emul *vt100)
 }
 
 /*
+SGR – Select Graphic Rendition
+
+ESC [ Ps ; . . . ; Ps m
+
+Invoke the graphic rendition specified by the parameter(s). All
+following characters transmitted to the VT100 are rendered according
+to the parameter(s) until the next occurrence of SGR. Format Effector
+
+Parameter    Parameter Meaning
+0            Attributes off
+1            Bold or increased intensity
+4            Underscore
+5            Blink
+7            Negative (reverse) image
+
+All other parameter values are ignored.
+
+With the Advanced Video Option, only one type of character attribute
+is possible as determined by the cursor selection; in that case
+specifying either the underscore or the reverse attribute will
+activate the currently selected attribute. (See cursor selection in
+Chapter 1).
+*/
+void SGR(struct vt100_emul *vt100)
+{
+    vt100 = vt100;
+    /* Just ignore them for now, we are rendering pure text only */
+}
+
+/*
 DA – Device Attributes
 
 ESC [ Pn c
@@ -1018,6 +1048,7 @@ int main(int ac, char **av)
         callbacks.csi.RM = (vt100_action)RM;
         callbacks.csi.CUD = (vt100_action)CUD;
         callbacks.csi.DECSTBM = (vt100_action)DECSTBM;
+        callbacks.csi.SGR = (vt100_action)SGR;
         callbacks.csi.CUU = (vt100_action)CUU;
         callbacks.csi.CUB = (vt100_action)CUB;
         callbacks.esc.NEL = (vt100_action)NEL;
