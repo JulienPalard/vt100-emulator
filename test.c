@@ -986,6 +986,8 @@ int main(int ac, char **av)
         callbacks.csi.HVP = (vt100_action)HVP;
         callbacks.csi.EL = (vt100_action)EL;
         callbacks.csi.DA = (vt100_action)DA;
+        callbacks.csi.SM = (vt100_action)SM;
+        callbacks.csi.RM = (vt100_action)RM;
         callbacks.csi.ED = (vt100_action)ED;
         callbacks.csi.CUP = (vt100_action)CUP;
         callbacks.csi.CUF = (vt100_action)CUF;
