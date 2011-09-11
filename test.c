@@ -408,6 +408,30 @@ void SM(struct vt100_emul *vt100)
 }
 
 /*
+DECSTBM – Set Top and Bottom Margins (DEC Private)
+
+ESC [ Pn; Pn r
+
+This sequence sets the top and bottom margins to define the scrolling
+region. The first parameter is the line number of the first line in
+the scrolling region; the second parameter is the line number of the
+bottom line in the scrolling region. Default is the entire screen (no
+margins). The minimum size of the scrolling region allowed is two
+lines, i.e., the top margin must be less than the bottom margin. The
+cursor is placed in the home position (see Origin Mode DECOM).
+
+*/
+void DECSTBM(struct vt100_emul *vt100)
+{
+    if (vt100->argc > 0)
+    {
+        write(2, "DECSTBM not supported, help me understand margins plz :P\n",
+              57);
+        exit(EXIT_FAILURE);
+    }
+}
+
+/*
 DA – Device Attributes
 
 ESC [ Pn c
@@ -993,6 +1017,7 @@ int main(int ac, char **av)
         callbacks.csi.CUF = (vt100_action)CUF;
         callbacks.csi.RM = (vt100_action)RM;
         callbacks.csi.CUD = (vt100_action)CUD;
+        callbacks.csi.DECSTBM = (vt100_action)DECSTBM;
         callbacks.csi.CUU = (vt100_action)CUU;
         callbacks.csi.CUB = (vt100_action)CUB;
         callbacks.esc.NEL = (vt100_action)NEL;
