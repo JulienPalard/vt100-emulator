@@ -369,6 +369,8 @@ void RM(struct vt100_emul *vt100)
         if (mode == DECCOLM)
         {
             term->width = 80;
+            term->x = term->y = 0; /* /!\ This is not on the documentation ... */
+            blank_screen(term);    /* /!\ This is not on the documentation ... */
         }
         UNSET_MODE(term, mode);
     }
@@ -1002,6 +1004,16 @@ void unimplemented(struct vt100_emul* vt100, char *seq, char chr)
     write(1, ")", 1);
     write(1, &chr, 1);
     write(1, "\n", 1);
+}
+
+void blank_screen(struct headless_terminal *terminal)
+{
+    unsigned int x;
+    unsigned int y;
+
+    for (x = 0; x < terminal->width; ++x)
+        for (y = 0; y < terminal->height; ++y)
+            set(terminal, x, y, '\0');
 }
 
 int main(int ac, char **av)
