@@ -68,11 +68,14 @@ void vt100_parse_params(struct vt100_emul *vt100)
 
 void vt100_call_CSI(struct vt100_emul *vt100, char c)
 {
-    if (c < '?' || c > 'z')
-        goto leave;
-    if (((vt100_action *)&vt100->callbacks->csi)[c - '?'] == NULL)
-        goto leave;
     vt100_parse_params(vt100);
+    if (c < '?' || c > 'z'
+        || ((vt100_action *)&vt100->callbacks->csi)[c - '?'] == NULL)
+    {
+        if (vt100->unimplemented != NULL)
+            vt100->unimplemented(vt100, "CSI", c);
+        goto leave;
+    }
     ((vt100_action *)&vt100->callbacks->csi)[c - '?'](vt100);
 leave:
     vt100->state = INIT;
@@ -83,10 +86,13 @@ leave:
 
 void vt100_call_ESC(struct vt100_emul *vt100, char c)
 {
-    if (c < '0' || c > 'z')
+    if (c < '0' || c > 'z'
+        || ((vt100_action *)&vt100->callbacks->esc)[c - '0'] == NULL)
+    {
+        if (vt100->unimplemented != NULL)
+            vt100->unimplemented(vt100, "ESC", c);
         goto leave;
-    if (((vt100_action *)&vt100->callbacks->esc)[c - '0'] == NULL)
-        goto leave;
+    }
     ((vt100_action *)&vt100->callbacks->esc)[c - '0'](vt100);
 leave:
     vt100->state = INIT;
@@ -96,10 +102,13 @@ leave:
 
 void vt100_call_HASH(struct vt100_emul *vt100, char c)
 {
-    if (c < '0' || c > '9')
+    if (c < '0' || c > '9'
+        || ((vt100_action *)&vt100->callbacks->hash)[c - '0'] == NULL)
+    {
+        if (vt100->unimplemented != NULL)
+            vt100->unimplemented(vt100, "HASH", c);
         goto leave;
-    if (((vt100_action *)&vt100->callbacks->hash)[c - '0'] == NULL)
-        goto leave;
+    }
     ((vt100_action *)&vt100->callbacks->hash)[c - '0'](vt100);
 leave:
     vt100->state = INIT;
@@ -109,10 +118,13 @@ leave:
 
 void vt100_call_GSET(struct vt100_emul *vt100, char c)
 {
-    if (c < '0' || c > 'B')
+    if (c < '0' || c > 'B'
+        || ((vt100_action *)&vt100->callbacks->scs)[c - '0'] == NULL)
+    {
+        if (vt100->unimplemented != NULL)
+            vt100->unimplemented(vt100, "GSET", c);
         goto leave;
-    if (((vt100_action *)&vt100->callbacks->scs)[c - '0'] == NULL)
-        goto leave;
+    }
     ((vt100_action *)&vt100->callbacks->scs)[c - '0'](vt100);
 leave:
     vt100->state = INIT;
@@ -120,6 +132,21 @@ leave:
     vt100->argc = 0;
 }
 
+/*
+** INIT
+**  \_ ESC "\033"
+**  |   \_ CSI   "\033["
+**  |   |   \_ c == '?' : vt100->flag = '?'
+**  |   |   \_ c == ';' || (c >= '0' && c <= '9') : vt100_push
+**  |   |   \_ else : vt100_call_CSI()
+**  |   \_ HASH  "\033#"
+**  |   |   \_ vt100_call_hash()
+**  |   \_ G0SET "\033("
+**  |   |   \_ vt100_call_GSET()
+**  |   \_ G1SET "\033)"
+**  |   |   \_ vt100_call_GSET()
+**  \_ vt100->write()
+*/
 void vt100_read(struct vt100_emul *vt100, char c)
 {
     if (vt100->state == INIT)

@@ -664,6 +664,24 @@ void restore_termios(int fd)
     ioctl(fd, TCSETS, &backup);
 }
 
+void unimplemented(struct vt100_emul* vt100, char *seq, char chr)
+{
+    unsigned int argc;
+
+    write(1, "UNIMPLEMENTED ", 14);
+    write(1, seq, strlen(seq));
+    write(1, "(", 1);
+    for (argc = 0; argc < vt100->argc; ++argc)
+    {
+        my_putnbr(vt100->argv[argc]);
+        if (argc != vt100->argc - 1)
+            write(1, ", ", 2);
+    }
+    write(1, ")", 1);
+    write(1, &chr, 1);
+    write(1, "\n", 1);
+}
+
 int main(int ac, char **av)
 {
     struct vt100_emul *vt100;
@@ -716,6 +734,7 @@ int main(int ac, char **av)
         vt100->user_data = &terminal;
         ioctl(master, TIOCSWINSZ, &winsize);
         main_loop(vt100, master);
+        vt100->unimplemented = unimplemented;
     }
     restore_termios(0);
     return EXIT_SUCCESS;

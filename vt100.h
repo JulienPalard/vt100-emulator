@@ -234,6 +234,9 @@ struct vt100_emul
     struct vt100_callbacks *callbacks;
     char                   flag;
     void                   *user_data;
+    void                   (*unimplemented)(struct vt100_emul*,
+                                            char *seq,
+                                            char chr);
 };
 
 struct vt100_emul *vt100_init(unsigned int width, unsigned int height,
