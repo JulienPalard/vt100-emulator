@@ -360,10 +360,18 @@ Modes following this section).
 void RM(struct vt100_emul *vt100)
 {
     struct headless_terminal *term;
+    unsigned int mode;
 
     term = (struct headless_terminal *)vt100->user_data;
     if (vt100->argc > 0)
-        UNSET_MODE(term, vt100->argv[0]);
+    {
+        mode = vt100->argv[0];
+        if (mode == DECCOLM)
+        {
+            term->width = 80;
+        }
+        UNSET_MODE(term, mode);
+    }
 }
 
 /*
@@ -380,10 +388,23 @@ it is reset by a reset mode (RM) control sequence.
 void SM(struct vt100_emul *vt100)
 {
     struct headless_terminal *term;
+    unsigned int mode;
 
     term = (struct headless_terminal *)vt100->user_data;
     if (vt100->argc > 0)
-        SET_MODE(term, vt100->argv[0]);
+    {
+        mode = vt100->argv[0];
+        if (mode == DECANM)
+        {
+            write(2, "TODO: Support vt52 mode\n", 24);
+            exit(EXIT_FAILURE);
+        }
+        if (mode == DECCOLM)
+        {
+            term->width = 132;
+        }
+        SET_MODE(term, mode);
+    }
 }
 
 /*
@@ -946,11 +967,11 @@ int main(int ac, char **av)
     memset(&callbacks, 0, sizeof(callbacks));
     winsize.ws_row = terminal.height = 24;
     winsize.ws_col = terminal.width = 80;
-    terminal.screen = calloc(terminal.width * SCROLLBACK * terminal.height,
+    terminal.screen = calloc(132 * SCROLLBACK * terminal.height,
                              sizeof(*terminal.screen));
     terminal.x = 0;
     terminal.y = 0;
-    terminal.modes = 0;
+    terminal.modes = MASK_DECANM;
     terminal.top_line = 0;
     child = forkpty(&terminal.master, NULL, NULL, NULL);
     if (child == CHILD)
