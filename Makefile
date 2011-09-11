@@ -28,3 +28,6 @@ clean:
 		$(RM) $(NAME) *~ \#*\# *.o *.core
 
 re:		clean all
+
+check-syntax:
+		gcc -o /dev/null -S ${CHK_SOURCES}
