@@ -51,7 +51,7 @@ unsigned int get_mode_mask(unsigned int mode)
 
 #define SET_MODE(term, mode) ((term)->modes |= get_mode_mask(mode))
 #define UNSET_MODE(term, mode) ((term)->modes &= ~get_mode_mask(mode))
-#define GET_MODE(term, mode) ((term)->modes & get_mode_mask(mode))
+#define MODE_IS_SET(term, mode) ((term)->modes & get_mode_mask(mode))
 
 struct headless_terminal
 {
@@ -825,9 +825,10 @@ static void vt100_write(struct vt100_emul *vt100, char c __attribute__((unused))
     }
     if (c == '\n')
     {
-        term->x = 0;
-        vt100->argc = 0;
-        NEL(vt100);
+        if (MODE_IS_SET(term, LNM))
+            NEL(vt100);
+        else
+            IND(vt100);
         return ;
     }
     if (c == '\010' && term->x > 0)
