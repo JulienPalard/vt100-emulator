@@ -9,6 +9,50 @@
 #define CHILD 0
 #define SCROLLBACK 3
 
+#define MASK_LNM     1
+#define MASK_DECCKM  2
+#define MASK_DECANM  4
+#define MASK_DECCOLM 8
+#define MASK_DECSCLM 16
+#define MASK_DECSCNM 32
+#define MASK_DECOM   64
+#define MASK_DECAWM  128
+#define MASK_DECARM  256
+#define MASK_DECINLM 512
+
+#define LNM     20
+#define DECCKM  1
+#define DECANM  2
+#define DECCOLM 3
+#define DECSCLM 4
+#define DECSCNM 5
+#define DECOM   6
+#define DECAWM  7
+#define DECARM  8
+#define DECINLM 9
+
+unsigned int get_mode_mask(unsigned int mode)
+{
+    switch (mode)
+    {
+    case LNM     : return MASK_LNM;
+    case DECCKM  : return MASK_DECCKM;
+    case DECANM  : return MASK_DECANM;
+    case DECCOLM : return MASK_DECCOLM;
+    case DECSCLM : return MASK_DECSCLM;
+    case DECSCNM : return MASK_DECSCNM;
+    case DECOM   : return MASK_DECOM;
+    case DECAWM  : return MASK_DECAWM;
+    case DECARM  : return MASK_DECARM;
+    case DECINLM : return MASK_DECINLM;
+    default:       return 0;
+    }
+}
+
+#define SET_MODE(term, mode) ((term)->modes |= get_mode_mask(mode))
+#define UNSET_MODE(term, mode) ((term)->modes &= ~get_mode_mask(mode))
+#define GET_MODE(term, mode) ((term)->modes & get_mode_mask(mode))
+
 struct headless_terminal
 {
     unsigned int width;
@@ -18,8 +62,140 @@ struct headless_terminal
     unsigned int saved_x;
     unsigned int saved_y;
     unsigned int top_line; /* Line at the top of the display */
+    int          master;
     char         *screen;
+    unsigned int modes;
 };
+
+/*
+Modes
+=====
+
+The following is a list of VT100 modes which may be changed with set
+mode (SM) and reset mode (RM) controls.
+
+ANSI Specified Modes
+--------------------
+
+Parameter    Mode Mnemonic    Mode Function
+0                             Error (ignored)
+20           LNM              Line feed new line mode
+
+
+DEC Private Modes
+=================
+If the first character in the parameter string is ? (077), the
+parameters are interpreted as DEC private parameters according to the
+following:
+
+Parameter    Mode Mnemonic    Mode Function
+0                             Error (ignored)
+1            DECCKM           Cursor key
+2            DECANM           ANSI/VT52
+3            DECCOLM          Column
+4            DECSCLM          Scrolling
+5            DECSCNM          Screen
+6            DECOM            Origin
+7            DECAWM           Auto wrap
+8            DECARM           Auto repeating
+9            DECINLM          Interlace
+
+LNM – Line Feed/New Line Mode
+-----------------------------
+This is a parameter applicable to set mode (SM) and reset mode (RM)
+control sequences. The reset state causes the interpretation of the
+line feed (LF), defined in ANSI Standard X3.4-1977, to imply only
+vertical movement of the active position and causes the RETURN key
+(CR) to send the single code CR. The set state causes the LF to imply
+movement to the first position of the following line and causes the
+RETURN key to send the two codes (CR, LF). This is the New Line (NL)
+option.
+
+This mode does not affect the index (IND), or next line (NEL) format
+effectors.
+
+DECCKM – Cursor Keys Mode (DEC Private)
+---------------------------------------
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. This mode is only effective when the terminal
+is in keypad application mode (see DECKPAM) and the ANSI/VT52 mode
+(DECANM) is set (see DECANM). Under these conditions, if the cursor
+key mode is reset, the four cursor function keys will send ANSI cursor
+control commands. If cursor key mode is set, the four cursor function
+keys will send application functions.
+
+DECANM – ANSI/VT52 Mode (DEC Private)
+-------------------------------------
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes only VT52 compatible
+escape sequences to be interpreted and executed. The set state causes
+only ANSI "compatible" escape and control sequences to be interpreted
+and executed.
+
+DECCOLM – Column Mode (DEC Private)
+-----------------------------------
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes a maximum of 80 columns
+on the screen. The set state causes a maximum of 132 columns on the
+screen.
+
+DECSCLM – Scrolling Mode (DEC Private)
+--------------------------------------
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes scrolls to "jump"
+instantaneously. The set state causes scrolls to be "smooth" at a
+maximum rate of six lines per second.
+
+DECSCNM – Screen Mode (DEC Private)
+-----------------------------------
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes the screen to be black
+with white characters. The set state causes the screen to be white
+with black characters.
+
+DECOM – Origin Mode (DEC Private)
+---------------------------------
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes the origin to be at the
+upper-left character position on the screen. Line and column numbers
+are, therefore, independent of current margin settings. The cursor may
+be positioned outside the margins with a cursor position (CUP) or
+horizontal and vertical position (HVP) control.
+
+The set state causes the origin to be at the upper-left character
+position within the margins. Line and column numbers are therefore
+relative to the current margin settings. The cursor is not allowed to
+be positioned outside the margins.
+
+The cursor is moved to the new home position when this mode is set or
+reset.
+
+Lines and columns are numbered consecutively, with the origin being
+line 1, column 1.
+
+DECAWM – Autowrap Mode (DEC Private)
+------------------------------------
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes any displayable
+characters received when the cursor is at the right margin to replace
+any previous characters there. The set state causes these characters
+to advance to the start of the next line, doing a scroll up if
+required and permitted.
+
+DECARM – Auto Repeat Mode (DEC Private)
+---------------------------------------
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes no keyboard keys to
+auto-repeat. The set state causes certain keyboard keys to auto-repeat.
+
+DECINLM – Interlace Mode (DEC Private)
+--------------------------------------
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state (non-interlace) causes the video
+processor to display 240 scan lines per frame. The set state (interlace)
+causes the video processor to display 480 scan lines per frame. There is
+no increase in character resolution.
+*/
 
 void set(struct headless_terminal *term, unsigned int x, unsigned int y, char c)
 {
@@ -148,7 +324,7 @@ void dump(char *title, struct vt100_emul *vt100,
             write(1, ", ", 2);
     }
     write(1, "\n", 1);
-    /* disp(term); */
+    disp(term);
 }
 
 /*
@@ -168,6 +344,77 @@ void DECSC(struct vt100_emul *vt100)
     term->saved_x = term->x;
     term->saved_y = term->y;
     dump("DECSC", vt100, term);
+}
+
+/*
+RM – Reset Mode
+
+ESC [ Ps ; Ps ; . . . ; Ps l
+
+Resets one or more VT100 modes as specified by each selective
+parameter in the parameter string. Each mode to be reset is specified
+by a separate parameter. [See Set Mode (SM) control sequence]. (See
+Modes following this section).
+
+*/
+void RM(struct vt100_emul *vt100)
+{
+    struct headless_terminal *term;
+
+    term = (struct headless_terminal *)vt100->user_data;
+    if (vt100->argc > 0)
+        UNSET_MODE(term, vt100->argv[0]);
+}
+
+/*
+SM – Set Mode
+
+ESC [ Ps ; . . . ; Ps h
+
+Causes one or more modes to be set within the VT100 as specified by
+each selective parameter in the parameter string. Each mode to be set
+is specified by a separate parameter. A mode is considered set until
+it is reset by a reset mode (RM) control sequence.
+
+*/
+void SM(struct vt100_emul *vt100)
+{
+    struct headless_terminal *term;
+
+    term = (struct headless_terminal *)vt100->user_data;
+    if (vt100->argc > 0)
+        SET_MODE(term, vt100->argv[0]);
+}
+
+/*
+DA – Device Attributes
+
+ESC [ Pn c
+
+
+The host requests the VT100 to send a device attributes (DA) control
+sequence to identify itself by sending the DA control sequence with
+either no parameter or a parameter of 0.  Response to the request
+described above (VT100 to host) is generated by the VT100 as a DA
+control sequence with the numeric parameters as follows:
+
+Option Present              Sequence Sent
+No options                  ESC [?1;0c
+Processor option (STP)      ESC [?1;1c
+Advanced video option (AVO) ESC [?1;2c
+AVO and STP                 ESC [?1;3c
+Graphics option (GPO)       ESC [?1;4c
+GPO and STP                 ESC [?1;5c
+GPO and AVO                 ESC [?1;6c
+GPO, STP and AVO            ESC [?1;7c
+
+*/
+void DA(struct vt100_emul *vt100)
+{
+    struct headless_terminal *term;
+
+    term = (struct headless_terminal *)vt100->user_data;
+    write(term->master, "\033[?1;0c", 7);
 }
 
 /*
@@ -600,7 +847,6 @@ static void vt100_write(struct vt100_emul *vt100, char c __attribute__((unused))
     my_putstr(", ");
     my_putnbr((unsigned int)c);
     my_putstr(")\n");
-    dump("WRITE", vt100, term);
 }
 
 int main_loop(struct vt100_emul *vt100, int master)
@@ -687,7 +933,6 @@ int main(int ac, char **av)
     struct vt100_emul *vt100;
     struct vt100_callbacks callbacks;
     struct headless_terminal terminal;
-    int master;
     int child;
     struct winsize winsize;
 
@@ -704,8 +949,9 @@ int main(int ac, char **av)
                              sizeof(*terminal.screen));
     terminal.x = 0;
     terminal.y = 0;
+    terminal.modes = 0;
     terminal.top_line = 0;
-    child = forkpty(&master, NULL, NULL, NULL);
+    child = forkpty(&terminal.master, NULL, NULL, NULL);
     if (child == CHILD)
     {
         setsid();
@@ -717,9 +963,11 @@ int main(int ac, char **av)
     {
         callbacks.csi.HVP = (vt100_action)HVP;
         callbacks.csi.EL = (vt100_action)EL;
+        callbacks.csi.DA = (vt100_action)DA;
         callbacks.csi.ED = (vt100_action)ED;
         callbacks.csi.CUP = (vt100_action)CUP;
         callbacks.csi.CUF = (vt100_action)CUF;
+        callbacks.csi.RM = (vt100_action)RM;
         callbacks.csi.CUD = (vt100_action)CUD;
         callbacks.csi.CUU = (vt100_action)CUU;
         callbacks.csi.CUB = (vt100_action)CUB;
@@ -732,9 +980,9 @@ int main(int ac, char **av)
 
         vt100 = vt100_init(80, 24, &callbacks, vt100_write);
         vt100->user_data = &terminal;
-        ioctl(master, TIOCSWINSZ, &winsize);
-        main_loop(vt100, master);
         vt100->unimplemented = unimplemented;
+        ioctl(terminal.master, TIOCSWINSZ, &winsize);
+        main_loop(vt100, terminal.master);
     }
     restore_termios(0);
     return EXIT_SUCCESS;
