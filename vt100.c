@@ -2,7 +2,8 @@
 #include "vt100.h"
 
 /*
- * Source : http://vt100.net/docs/vt100-ug/chapter3.html#S3.3
+ * Source : http://vt100.net/docs/vt100-ug/chapter3.html
+            http://vt100.net/docs/tp83/appendixb.html
  * It's a vt100 implementation, that implements ANSI control function.
  */
 
