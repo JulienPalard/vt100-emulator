@@ -353,9 +353,9 @@ void disp(struct headless_terminal *term)
                 write(1, " ", 1);
             else
             {
-                fprintf(stderr,
-                        "Don't know how to print char '%c' (%i)\n",
-                        c, (int)c);
+                my_putstr("Don't know how to print char ");
+                my_putnbr_base((int)c, "01234567");
+                my_putchar('\n');
                 exit(EXIT_FAILURE);
             }
             if (x == term->x && y == term->y)
@@ -1020,7 +1020,7 @@ static void vt100_write(struct vt100_emul *vt100, char c __attribute__((unused))
         term->x = 0;
         return ;
     }
-    if (c == '\n')
+    if (c == '\n' || c == '\013' || c == '\014')
     {
         if (MODE_IS_SET(term, LNM))
             NEL(vt100);

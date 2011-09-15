@@ -70,8 +70,7 @@ void vt100_parse_params(struct vt100_emul *vt100)
 void vt100_call_CSI(struct vt100_emul *vt100, char c)
 {
     vt100_parse_params(vt100);
-    if (c < '?' || c > 'z'
-        || ((vt100_action *)&vt100->callbacks->csi)[c - '?'] == NULL)
+    if (((vt100_action *)&vt100->callbacks->csi)[c - '?'] == NULL)
     {
         if (vt100->unimplemented != NULL)
             vt100->unimplemented(vt100, "CSI", c);
@@ -87,8 +86,7 @@ leave:
 
 void vt100_call_ESC(struct vt100_emul *vt100, char c)
 {
-    if (c < '0' || c > 'z'
-        || ((vt100_action *)&vt100->callbacks->esc)[c - '0'] == NULL)
+    if (((vt100_action *)&vt100->callbacks->esc)[c - '0'] == NULL)
     {
         if (vt100->unimplemented != NULL)
             vt100->unimplemented(vt100, "ESC", c);
@@ -103,8 +101,7 @@ leave:
 
 void vt100_call_HASH(struct vt100_emul *vt100, char c)
 {
-    if (c < '0' || c > '9'
-        || ((vt100_action *)&vt100->callbacks->hash)[c - '0'] == NULL)
+    if (((vt100_action *)&vt100->callbacks->hash)[c - '0'] == NULL)
     {
         if (vt100->unimplemented != NULL)
             vt100->unimplemented(vt100, "HASH", c);
@@ -167,12 +164,16 @@ void vt100_read(struct vt100_emul *vt100, char c)
             vt100->state = G0SET;
         else if (c == ')')
             vt100->state = G1SET;
-        else
+        else if (c >= '0' && c <= 'z')
             vt100_call_ESC(vt100, c);
+        else vt100->write(vt100, c);
     }
     else if (vt100->state == HASH)
     {
-        vt100_call_HASH(vt100, c);
+        if (c >= '0' && c <= '9')
+            vt100_call_HASH(vt100, c);
+        else
+            vt100->write(vt100, c);
     }
     else if (vt100->state == G0SET || vt100->state == G1SET)
     {
@@ -187,7 +188,7 @@ void vt100_read(struct vt100_emul *vt100, char c)
         else if (c >= '?' && c <= 'z')
             vt100_call_CSI(vt100, c);
         else
-            vt100->write(vt100, c); /*TODO Write aussi quand c'est pas des ĆSI peut etre ?*/
+            vt100->write(vt100, c);
     }
 }
 
