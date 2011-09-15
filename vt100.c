@@ -184,8 +184,10 @@ void vt100_read(struct vt100_emul *vt100, char c)
             vt100->flag = '?';
         else if (c == ';' || (c >= '0' && c <= '9'))
             vt100_push(vt100, c);
-        else
+        else if (c >= '?' && c <= 'z')
             vt100_call_CSI(vt100, c);
+        else
+            vt100->write(vt100, c); /*TODO Write aussi quand c'est pas des ĆSI peut etre ?*/
     }
 }
 

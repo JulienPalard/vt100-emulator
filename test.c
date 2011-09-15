@@ -32,6 +32,48 @@
 #define DECINLM 9
 
 
+void my_putchar(char c)
+{
+    write(1, &c, 1);
+}
+
+void my_putstr(char *str)
+{
+    write(1, str, strlen(str));
+}
+
+void my_putnbr(int nb)
+{
+    if (nb >= 0)
+        nb = -nb;
+    else
+        my_putchar('-');
+    if (nb <= -10)
+        my_putnbr(-nb / 10);
+    my_putchar(-(nb % 10) + '0');
+}
+
+int	my_putnbr_base(int nbr, char *base)
+{
+    int len;
+    int neg_flag;
+
+    len = -1;
+    neg_flag = 1;
+    while (*(base + ++len));
+    if (len < 2)
+        return (-1);
+    if (nbr < 0)
+    {
+        my_putchar('-');
+        neg_flag = -1;
+    }
+    if (nbr / len)
+        my_putnbr_base((nbr / len) * neg_flag, base);
+    my_putchar(base[(nbr % len) * neg_flag]);
+    return (nbr);
+}
+
 unsigned int get_mode_mask(unsigned int mode)
 {
     switch (mode)
@@ -225,6 +267,7 @@ void set(struct headless_terminal *term,
         term->screen[SCREEN_PTR(term, x, y)] = c;
 }
 
+
 char get(struct headless_terminal *term, unsigned int x, unsigned int y)
 {
     if (y < term->margin_top || y > term->margin_bottom)
@@ -235,8 +278,21 @@ char get(struct headless_terminal *term, unsigned int x, unsigned int y)
 
 void froze_line(struct headless_terminal *term, unsigned int y)
 {
+    my_putstr("Frozing line ");
+    my_putnbr(y);
+    my_putchar('\n');
     memcpy(term->frozen_screen + term->width * y,
            term->screen + SCREEN_PTR(term, 0, y),
+           term->width);
+}
+
+void unfroze_line(struct headless_terminal *term, unsigned int y)
+{
+    my_putstr("Unfrozing line ");
+    my_putnbr(y);
+    my_putchar('\n');
+    memcpy(term->screen + SCREEN_PTR(term, 0, y),
+           term->frozen_screen + term->width * y,
            term->width);
 }
 
@@ -248,48 +304,6 @@ void blank_screen(struct headless_terminal *terminal)
     for (x = 0; x < terminal->width; ++x)
         for (y = 0; y < terminal->height; ++y)
             set(terminal, x, y, '\0');
-}
-
-void my_putchar(char c)
-{
-    write(1, &c, 1);
-}
-
-void my_putstr(char *str)
-{
-    write(1, str, strlen(str));
-}
-
-void my_putnbr(int nb)
-{
-    if (nb >= 0)
-        nb = -nb;
-    else
-        my_putchar('-');
-    if (nb <= -10)
-        my_putnbr(-nb / 10);
-    my_putchar(-(nb % 10) + '0');
-}
-
-int	my_putnbr_base(int nbr, char *base)
-{
-    int len;
-    int neg_flag;
-
-    len = -1;
-    neg_flag = 1;
-    while (*(base + ++len));
-    if (len < 2)
-        return (-1);
-    if (nbr < 0)
-    {
-        my_putchar('-');
-        neg_flag = -1;
-    }
-    if (nbr / len)
-        my_putnbr_base((nbr / len) * neg_flag, base);
-    my_putchar(base[(nbr % len) * neg_flag]);
-    return (nbr);
 }
 
 void my_strdump(char *str)
@@ -369,7 +383,7 @@ void dump(char *title, struct vt100_emul *vt100,
             write(1, ", ", 2);
     }
     write(1, "\n", 1);
-    disp(term);
+    /* disp(term); */
 }
 
 /*
@@ -544,17 +558,22 @@ void DECSTBM(struct vt100_emul *vt100)
             return ;
         if (margin_bottom - margin_top <= 2)
             return ;
-        term->margin_bottom = margin_bottom;
-        term->margin_top = margin_top;
-        for (line = 0; line < term->height; ++line)
-            if (line < margin_top || line > margin_bottom)
-                froze_line(term, line);
     }
     else
     {
-        term->margin_top = 0;
-        term->margin_bottom = term->height - 1;
+        margin_top = 0;
+        margin_bottom = term->height - 1;
     }
+    for (line = term->margin_top; line < margin_top; ++line)
+        froze_line(term, line);
+    for (line = term->margin_bottom; line < margin_bottom; ++line)
+        unfroze_line(term, line);
+    for (line = margin_top; line < term->margin_top; ++line)
+        unfroze_line(term, line);
+    for (line = margin_bottom; line < term->margin_bottom; ++line)
+        froze_line(term, line);
+    term->margin_bottom = margin_bottom;
+    term->margin_top = margin_top;
     dump("DECSTBM", vt100, term);
 }
 
@@ -1114,8 +1133,8 @@ void unimplemented(struct vt100_emul* vt100, char *seq, char chr)
         if (argc != vt100->argc - 1)
             write(1, ", ", 2);
     }
-    write(1, ")", 1);
-    write(1, &chr, 1);
+    write(1, ")\\0", 1);
+    my_putnbr_base(chr, "01234567");
     write(1, "\n", 1);
 }
 
