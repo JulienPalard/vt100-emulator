@@ -117,6 +117,7 @@ struct headless_terminal
     char         *screen;
     char         *frozen_screen;
     char         *tabulations;
+    unsigned int selected_charset;
     unsigned int modes;
 };
 
@@ -1078,6 +1079,16 @@ static void vt100_write(struct vt100_emul *vt100, char c __attribute__((unused))
         } while (term->x < term->width && term->tabulations[term->x] == '-');
         return ;
     }
+    if (c == '\016')
+    {
+        term->selected_charset = 0;
+        return ;
+    }
+    if (c == '\017')
+    {
+        term->selected_charset = 1;
+        return ;
+    }
     if (term->x == term->width)
     {
         if (MODE_IS_SET(term, DECAWM))
@@ -1205,6 +1216,7 @@ int main(int ac, char **av)
     term.tabulations = malloc(132);
     term.margin_top = 0;
     term.margin_bottom = term.height - 1;
+    term.selected_charset = 0;
     term.x = 0;
     term.y = 0;
     term.modes = MASK_DECANM;
