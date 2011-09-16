@@ -557,7 +557,7 @@ void DECSTBM(struct vt100_emul *vt100)
         margin_bottom = vt100->argv[1] - 1;
         if (margin_bottom >= term->height)
             return ;
-        if (margin_bottom - margin_top <= 2)
+        if (margin_bottom - margin_top <= 0)
             return ;
     }
     else
@@ -576,6 +576,8 @@ void DECSTBM(struct vt100_emul *vt100)
     term->margin_bottom = margin_bottom;
     term->margin_top = margin_top;
     dump("DECSTBM", vt100, term);
+    vt100->argc = 0;
+    CUP(vt100);
 }
 
 /*
