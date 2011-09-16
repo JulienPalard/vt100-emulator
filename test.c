@@ -116,6 +116,7 @@ struct headless_terminal
     int          master;
     char         *screen;
     char         *frozen_screen;
+    char         *tabulations;
     unsigned int modes;
 };
 
@@ -348,9 +349,9 @@ void disp(struct headless_terminal *term)
             if (c == '\0')
                 c = ' ';
             if (c > 31)
+            {
                 write(1, &c, 1);
-            else if (c == '\t')
-                write(1, " ", 1);
+            }
             else
             {
                 my_putstr("Don't know how to print char ");
@@ -1001,6 +1002,37 @@ void HVP(struct vt100_emul *vt100)
     CUP(vt100);
 }
 
+void TBC(struct vt100_emul *vt100)
+{
+    struct headless_terminal *term;
+    unsigned int i;
+
+    term = (struct headless_terminal *)vt100->user_data;
+    if (vt100->argc == 0 || vt100->argv[0] == 0)
+    {
+        term->tabulations[term->x] = '-';
+    }
+    else if (vt100->argc == 1 && vt100->argv[0] == 3)
+    {
+        for (i = 0; i < 132; ++i)
+            term->tabulations[i] = '-';
+    }
+    dump("TBC", vt100, term);
+    my_putstr(term->tabulations);
+    my_putchar('\n');
+}
+
+void HTS(struct vt100_emul *vt100)
+{
+    struct headless_terminal *term;
+
+    term = (struct headless_terminal *)vt100->user_data;
+    term->tabulations[term->x] = '|';
+    dump("HTS", vt100, term);
+    my_putstr(term->tabulations);
+    my_putchar('\n');
+}
+
 static void vt100_write(struct vt100_emul *vt100, char c __attribute__((unused)))
 {
     struct headless_terminal *term;
@@ -1033,6 +1065,15 @@ static void vt100_write(struct vt100_emul *vt100, char c __attribute__((unused))
         if (term->x == term->width)
             term->x -= 1;
         term->x -= 1;
+        return ;
+    }
+    if (c == '\t')
+    {
+        do
+        {
+            set(term, term->x, term->y, ' ');
+            term->x += 1;
+        } while (term->x < term->width && term->tabulations[term->x] == '-');
         return ;
     }
     if (term->x == term->width)
@@ -1159,6 +1200,7 @@ int main(int ac, char **av)
                              sizeof(*term.screen));
     term.frozen_screen = calloc(132 * term.height,
                              sizeof(*term.frozen_screen));
+    term.tabulations = malloc(132);
     term.margin_top = 0;
     term.margin_bottom = term.height - 1;
     term.x = 0;
@@ -1188,6 +1230,8 @@ int main(int ac, char **av)
         callbacks.csi.DECSTBM = (vt100_action)DECSTBM;
         callbacks.csi.SGR = (vt100_action)SGR;
         callbacks.csi.CUU = (vt100_action)CUU;
+        callbacks.csi.TBC = (vt100_action)TBC;
+        callbacks.esc.HTS = (vt100_action)HTS;
         callbacks.csi.CUB = (vt100_action)CUB;
         callbacks.esc.NEL = (vt100_action)NEL;
         callbacks.esc.IND = (vt100_action)IND;
@@ -1198,6 +1242,7 @@ int main(int ac, char **av)
 
         vt100 = vt100_init(80, 24, &callbacks, vt100_write);
         vt100->user_data = &term;
+        TBC(vt100);
         vt100->unimplemented = unimplemented;
         ioctl(term.master, TIOCSWINSZ, &winsize);
         main_loop(vt100, term.master);
