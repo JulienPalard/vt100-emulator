@@ -6,7 +6,7 @@
 ##
 
 NAME = vt100
-SRC = vt100.c test.c
+SRC = term.c test.c
 OBJ = $(SRC:.c=.o)
 CC = gcc
 INCLUDE = .
