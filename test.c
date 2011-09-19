@@ -1244,10 +1244,6 @@ struct term_emul *vt100(void)
     term->callbacks.esc.n7 = DECSC;
     term->callbacks.hash.n8 = DECALN;
     term->user_data = vt100;
-    term->argc = 1;
-    term->argv[0] = 3;
-    TBC(term);
-    term->argc = 0;
     term->unimplemented = unimplemented;
     return term;
 }
