@@ -2,37 +2,24 @@
 #include "term.h"
 
 /*
- * Source : http://vt100.net/docs/vt100-ug/chapter3.html
-            http://vt100.net/docs/tp83/appendixb.html
- * It's a vt100 implementation, that implements ANSI control function.
- */
-
-/*
- * Vocabulary
- * CSI | Control Sequence Introducer | ESC [
- * Pn  | Numeric parameter           | [0-9]+
- * Ps  | Selective parameter         |
- *     | Parameter string            | List of parameters separated by ';'
- */
-
-/*
- *  Control sequences - VT100 to host ( write )
- * CPR | Cursor Position Report | ESC [ Pn ; Pn R
- *
- *
- * Control sequencs - Host to VT100 AND VT100 to host ( read write )
- * CUB | Cursor Backward        | ESC [ Pn D
- *
- */
-
-/*
- * Naming convention :
- * [rw]_shortname(struct vt100emul vt100, ...);
- * So CPR is w_CPR(struct vt100emul vt100, int pn1, int pn2);
- * And CUB is r_CUB(struct vt100emul vt100, int pn1, int pn2);
- *        AND w_CUB(struct vt100emul vt100, int pn1, int pn2);
- */
-
+** Term implement a terminal, (vt100 like)
+** It expose an API to implement a specific terminal, actually I implement
+** vt100.
+**
+** term.c parses escape sequences like
+** \033[4;2H
+** It allows control chars to be inside the sequence like :
+** \033[4\n;2H
+** and accept variations like :
+** \033#...
+** \033(...
+**
+** The API is simple, it consists of a structure term_callbacks (see
+** term.h) where 4 members points to a ascii_callbacks structure.
+** Ascii callbacks is only a struct with some ascii chars where you
+** can plug your callbacks functions. see vt100.c as an example.
+**
+*/
 
 void term_push(struct term_emul *term, char c)
 {
@@ -70,13 +57,13 @@ void term_parse_params(struct term_emul *term)
 void term_call_CSI(struct term_emul *term, char c)
 {
     term_parse_params(term);
-    if (((term_action *)&term->callbacks->csi)[c - '?'] == NULL)
+    if (((term_action *)&term->callbacks->csi)[c - '0'] == NULL)
     {
         if (term->unimplemented != NULL)
             term->unimplemented(term, "CSI", c);
         goto leave;
     }
-    ((term_action *)&term->callbacks->csi)[c - '?'](term);
+    ((term_action *)&term->callbacks->csi)[c - '0'](term);
 leave:
     term->state = INIT;
     term->flag = '\0';

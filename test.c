@@ -6,6 +6,12 @@
 #include <stdio.h>
 #include "term.h"
 
+/*
+ * Source : http://vt100.net/docs/vt100-ug/chapter3.html
+            http://vt100.net/docs/tp83/appendixb.html
+ * It's a vt100 implementation, that implements ANSI control function.
+ */
+
 #define CHILD 0
 #define SCROLLBACK 3
 
@@ -92,9 +98,9 @@ unsigned int get_mode_mask(unsigned int mode)
     }
 }
 
-#define SET_MODE(headless_term, mode) ((headless_term)->modes |= get_mode_mask(mode))
-#define UNSET_MODE(headless_term, mode) ((headless_term)->modes &= ~get_mode_mask(mode))
-#define MODE_IS_SET(headless_term, mode) ((headless_term)->modes & get_mode_mask(mode))
+#define SET_MODE(vt100, mode) ((vt100)->modes |= get_mode_mask(mode))
+#define UNSET_MODE(vt100, mode) ((vt100)->modes &= ~get_mode_mask(mode))
+#define MODE_IS_SET(vt100, mode) ((vt100)->modes & get_mode_mask(mode))
 
 /*
 ** frozen_screen is the frozen part of the screen
@@ -102,7 +108,7 @@ unsigned int get_mode_mask(unsigned int mode)
 ** The top of the frozen_screen holds the top margin
 ** while the bottom holds the bottom margin.
 */
-struct headless_terminal
+struct vt100_term
 {
     unsigned int width;
     unsigned int height;
@@ -113,7 +119,6 @@ struct headless_terminal
     unsigned int margin_top;
     unsigned int margin_bottom;
     unsigned int top_line; /* Line at the top of the display */
-    int          master;
     char         *screen;
     char         *frozen_screen;
     char         *tabulations;
@@ -251,15 +256,15 @@ causes the video processor to display 480 scan lines per frame. There is
 no increase in character resolution.
 */
 
-#define SCREEN_PTR(headless_term, x, y) \
-    ((headless_term->top_line * headless_term->width + x + headless_term->width * y) \
-    % (headless_term->width * SCROLLBACK * headless_term->height))
+#define SCREEN_PTR(vt100, x, y) \
+    ((vt100->top_line * vt100->width + x + vt100->width * y) \
+    % (vt100->width * SCROLLBACK * vt100->height))
 
-#define FROZEN_SCREEN_PTR(headless_term, x, y)                     \
-    ((x + headless_term->width * y) \
-    % (headless_term->width * SCROLLBACK * headless_term->height))
+#define FROZEN_SCREEN_PTR(vt100, x, y)                     \
+    ((x + vt100->width * y) \
+    % (vt100->width * SCROLLBACK * vt100->height))
 
-void set(struct headless_terminal *headless_term,
+void set(struct vt100_term *headless_term,
          unsigned int x, unsigned int y,
          char c)
 {
@@ -270,42 +275,42 @@ void set(struct headless_terminal *headless_term,
 }
 
 
-char get(struct headless_terminal *headless_term, unsigned int x, unsigned int y)
+char get(struct vt100_term *vt100, unsigned int x, unsigned int y)
 {
-    if (y < headless_term->margin_top || y > headless_term->margin_bottom)
-        return headless_term->frozen_screen[FROZEN_SCREEN_PTR(headless_term, x, y)];
+    if (y < vt100->margin_top || y > vt100->margin_bottom)
+        return vt100->frozen_screen[FROZEN_SCREEN_PTR(vt100, x, y)];
     else
-        return headless_term->screen[SCREEN_PTR(headless_term, x, y)];
+        return vt100->screen[SCREEN_PTR(vt100, x, y)];
 }
 
-void froze_line(struct headless_terminal *headless_term, unsigned int y)
+void froze_line(struct vt100_term *vt100, unsigned int y)
 {
     my_putstr("Frozing line ");
     my_putnbr(y);
     my_putchar('\n');
-    memcpy(headless_term->frozen_screen + headless_term->width * y,
-           headless_term->screen + SCREEN_PTR(headless_term, 0, y),
-           headless_term->width);
+    memcpy(vt100->frozen_screen + vt100->width * y,
+           vt100->screen + SCREEN_PTR(vt100, 0, y),
+           vt100->width);
 }
 
-void unfroze_line(struct headless_terminal *headless_term, unsigned int y)
+void unfroze_line(struct vt100_term *vt100, unsigned int y)
 {
     my_putstr("Unfrozing line ");
     my_putnbr(y);
     my_putchar('\n');
-    memcpy(headless_term->screen + SCREEN_PTR(headless_term, 0, y),
-           headless_term->frozen_screen + headless_term->width * y,
-           headless_term->width);
+    memcpy(vt100->screen + SCREEN_PTR(vt100, 0, y),
+           vt100->frozen_screen + vt100->width * y,
+           vt100->width);
 }
 
-void blank_screen(struct headless_terminal *headless_terminal)
+void blank_screen(struct vt100_term *vt100_term)
 {
     unsigned int x;
     unsigned int y;
 
-    for (x = 0; x < headless_terminal->width; ++x)
-        for (y = 0; y < headless_terminal->height; ++y)
-            set(headless_terminal, x, y, '\0');
+    for (x = 0; x < vt100_term->width; ++x)
+        for (y = 0; y < vt100_term->height; ++y)
+            set(vt100_term, x, y, '\0');
 }
 
 void my_strdump(char *str)
@@ -326,27 +331,27 @@ void my_strdump(char *str)
     write(1, "\n", 1);
 }
 
-void disp(struct headless_terminal *headless_term)
+void disp(struct vt100_term *vt100)
 {
     char c;
     unsigned int x;
     unsigned int y;
 
     write(1, "\n", 1);
-    for (x = 0; x < headless_term->width + 1; ++x)
+    for (x = 0; x < vt100->width + 1; ++x)
         write(1, "-", 1);
     write(1, "\n", 1);
-    for (y = 0; y < headless_term->height; ++y)
+    for (y = 0; y < vt100->height; ++y)
     {
-        if (y < headless_term->margin_top || y > headless_term->margin_bottom)
+        if (y < vt100->margin_top || y > vt100->margin_bottom)
             write(1, "#", 1);
         else
             write(1, "|", 1);
-        for (x = 0; x < headless_term->width; ++x)
+        for (x = 0; x < vt100->width; ++x)
         {
-            if (x == headless_term->x && y == headless_term->y)
+            if (x == vt100->x && y == vt100->y)
                 write(1, "\033[7m", 4);
-            c = get(headless_term, x, y);
+            c = get(vt100, x, y);
             if (c == '\0')
                 c = ' ';
             if (c > 31)
@@ -360,32 +365,32 @@ void disp(struct headless_terminal *headless_term)
                 my_putchar('\n');
                 exit(EXIT_FAILURE);
             }
-            if (x == headless_term->x && y == headless_term->y)
+            if (x == vt100->x && y == vt100->y)
                 write(1, "\033[0m", 4);
         }
         write(1, "|", 1);
         write(1, "\n", 1);
     }
-    for (x = 0; x < headless_term->width + 2; ++x)
+    for (x = 0; x < vt100->width + 2; ++x)
         write(1, "-", 1);
     write(1, "\n\n", 2);
 }
 
-void dump(char *title, struct term_emul *vt100,
-          struct headless_terminal *headless_term)
+void dump(char *title, struct term_emul *term_emul,
+          struct vt100_term *vt100)
 {
     unsigned int argc;
 
     write(1, title, strlen(title));
     write(1, " ", 1);
-    for (argc = 0; argc < vt100->argc; ++argc)
+    for (argc = 0; argc < term_emul->argc; ++argc)
     {
-        my_putnbr(vt100->argv[argc]);
-        if (argc != vt100->argc - 1)
+        my_putnbr(term_emul->argv[argc]);
+        if (argc != term_emul->argc - 1)
             write(1, ", ", 2);
     }
     write(1, "\n", 1);
-    /* disp(headless_term); */
+    /* disp(vt100); */
 }
 
 /*
@@ -396,15 +401,15 @@ ESC 7
 This sequence causes the cursor position, graphic rendition, and
 character set to be saved. (See DECRC).
 */
-void DECSC(struct term_emul *vt100)
+void DECSC(struct term_emul *term_emul)
 {
     /*TODO: Save graphic rendition and charset.*/
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    headless_term->saved_x = headless_term->x;
-    headless_term->saved_y = headless_term->y;
-    dump("DECSC", vt100, headless_term);
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100->saved_x = vt100->x;
+    vt100->saved_y = vt100->y;
+    dump("DECSC", term_emul, vt100);
 }
 
 /*
@@ -418,24 +423,24 @@ by a separate parameter. [See Set Mode (SM) control sequence]. (See
 Modes following this section).
 
 */
-void RM(struct term_emul *vt100)
+void RM(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int mode;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    if (vt100->argc > 0)
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    if (term_emul->argc > 0)
     {
-        mode = vt100->argv[0];
+        mode = term_emul->argv[0];
         if (mode == DECCOLM)
         {
-            headless_term->width = 80;
-            headless_term->x = headless_term->y = 0;
-            blank_screen(headless_term);
+            vt100->width = 80;
+            vt100->x = vt100->y = 0;
+            blank_screen(vt100);
         }
-        UNSET_MODE(headless_term, mode);
+        UNSET_MODE(vt100, mode);
     }
-    dump("RM", vt100, headless_term);
+    dump("RM", term_emul, vt100);
 }
 
 /*
@@ -456,33 +461,33 @@ HVP. Editor Function
 The numbering of lines depends on the state of the Origin Mode
 (DECOM).
 */
-void CUP(struct term_emul *vt100)
+void CUP(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     int arg0;
     int arg1;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
+    vt100 = (struct vt100_term *)term_emul->user_data;
     arg0 = 0;
     arg1 = 0;
-    if (vt100->argc > 0)
-        arg0 = vt100->argv[0] - 1;
-    if (vt100->argc > 1)
-        arg1 = vt100->argv[1] - 1;
+    if (term_emul->argc > 0)
+        arg0 = term_emul->argv[0] - 1;
+    if (term_emul->argc > 1)
+        arg1 = term_emul->argv[1] - 1;
     if (arg0 < 0)
         arg0 = 0;
     if (arg1 < 0)
         arg1 = 0;
 
-    if (MODE_IS_SET(headless_term, DECOM))
+    if (MODE_IS_SET(vt100, DECOM))
     {
-        arg0 += headless_term->margin_top;
-        if ((unsigned int)arg0 > headless_term->margin_bottom)
-            arg0 = headless_term->margin_bottom;
+        arg0 += vt100->margin_top;
+        if ((unsigned int)arg0 > vt100->margin_bottom)
+            arg0 = vt100->margin_bottom;
     }
-    headless_term->y = arg0;
-    headless_term->x = arg1;
-    dump("CUP", vt100, headless_term);
+    vt100->y = arg0;
+    vt100->x = arg1;
+    dump("CUP", term_emul, vt100);
 }
 
 /*
@@ -496,17 +501,17 @@ is specified by a separate parameter. A mode is considered set until
 it is reset by a reset mode (RM) control sequence.
 
 */
-void SM(struct term_emul *vt100)
+void SM(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int mode;
     unsigned int saved_argc;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    if (vt100->argc > 0)
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    if (term_emul->argc > 0)
     {
-        mode = vt100->argv[0];
-        SET_MODE(headless_term, mode);
+        mode = term_emul->argv[0];
+        SET_MODE(vt100, mode);
         if (mode == DECANM)
         {
             write(2, "TODO: Support vt52 mode\n", 24);
@@ -514,19 +519,19 @@ void SM(struct term_emul *vt100)
         }
         if (mode == DECCOLM)
         {
-            headless_term->width = 132;
-            headless_term->x = headless_term->y = 0;
-            blank_screen(headless_term);
+            vt100->width = 132;
+            vt100->x = vt100->y = 0;
+            blank_screen(vt100);
         }
         if (mode == DECOM)
         {
-            saved_argc = vt100->argc;
-            vt100->argc = 0;
-            CUP(vt100);
-            vt100->argc = saved_argc;
+            saved_argc = term_emul->argc;
+            term_emul->argc = 0;
+            CUP(term_emul);
+            term_emul->argc = saved_argc;
         }
     }
-    dump("SM", vt100, headless_term);
+    dump("SM", term_emul, vt100);
 }
 
 /*
@@ -543,20 +548,20 @@ lines, i.e., the top margin must be less than the bottom margin. The
 cursor is placed in the home position (see Origin Mode DECOM).
 
 */
-void DECSTBM(struct term_emul *vt100)
+void DECSTBM(struct term_emul *term_emul)
 {
     unsigned int margin_top;
     unsigned int margin_bottom;
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int line;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
+    vt100 = (struct vt100_term *)term_emul->user_data;
 
-    if (vt100->argc == 2)
+    if (term_emul->argc == 2)
     {
-        margin_top = vt100->argv[0] - 1;
-        margin_bottom = vt100->argv[1] - 1;
-        if (margin_bottom >= headless_term->height)
+        margin_top = term_emul->argv[0] - 1;
+        margin_bottom = term_emul->argv[1] - 1;
+        if (margin_bottom >= vt100->height)
             return ;
         if (margin_bottom - margin_top <= 0)
             return ;
@@ -564,21 +569,21 @@ void DECSTBM(struct term_emul *vt100)
     else
     {
         margin_top = 0;
-        margin_bottom = headless_term->height - 1;
+        margin_bottom = vt100->height - 1;
     }
-    for (line = headless_term->margin_top; line < margin_top; ++line)
-        froze_line(headless_term, line);
-    for (line = headless_term->margin_bottom; line < margin_bottom; ++line)
-        unfroze_line(headless_term, line);
-    for (line = margin_top; line < headless_term->margin_top; ++line)
-        unfroze_line(headless_term, line);
-    for (line = margin_bottom; line < headless_term->margin_bottom; ++line)
-        froze_line(headless_term, line);
-    headless_term->margin_bottom = margin_bottom;
-    headless_term->margin_top = margin_top;
-    dump("DECSTBM", vt100, headless_term);
-    vt100->argc = 0;
-    CUP(vt100);
+    for (line = vt100->margin_top; line < margin_top; ++line)
+        froze_line(vt100, line);
+    for (line = vt100->margin_bottom; line < margin_bottom; ++line)
+        unfroze_line(vt100, line);
+    for (line = margin_top; line < vt100->margin_top; ++line)
+        unfroze_line(vt100, line);
+    for (line = margin_bottom; line < vt100->margin_bottom; ++line)
+        froze_line(vt100, line);
+    vt100->margin_bottom = margin_bottom;
+    vt100->margin_top = margin_top;
+    dump("DECSTBM", term_emul, vt100);
+    term_emul->argc = 0;
+    CUP(term_emul);
 }
 
 /*
@@ -605,9 +610,9 @@ specifying either the underscore or the reverse attribute will
 activate the currently selected attribute. (See cursor selection in
 Chapter 1).
 */
-void SGR(struct term_emul *vt100)
+void SGR(struct term_emul *term_emul)
 {
-    vt100 = vt100;
+    term_emul = term_emul;
     /* Just ignore them for now, we are rendering pure text only */
 }
 
@@ -634,12 +639,12 @@ GPO and AVO                 ESC [?1;6c
 GPO, STP and AVO            ESC [?1;7c
 
 */
-void DA(struct term_emul *vt100)
+void DA(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    write(headless_term->master, "\033[?1;0c", 7);
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    write(term_emul->fd, "\033[?1;0c", 7);
 }
 
 /*
@@ -650,15 +655,15 @@ ESC 8
 This sequence causes the previously saved cursor position, graphic
 rendition, and character set to be restored.
 */
-void DECRC(struct term_emul *vt100)
+void DECRC(struct term_emul *term_emul)
 {
     /*TODO Save graphic rendition and charset */
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    headless_term->x = headless_term->saved_x;
-    headless_term->y = headless_term->saved_y;
-    dump("DECRC", vt100, headless_term);
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100->x = vt100->saved_x;
+    vt100->y = vt100->saved_y;
+    dump("DECRC", term_emul, vt100);
 }
 
 /*
@@ -670,17 +675,17 @@ This command fills the entire screen area with uppercase Es for screen
 focus and alignment. This command is used by DEC manufacturing and
 Field Service personnel.
 */
-void DECALN(struct term_emul *vt100)
+void DECALN(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int x;
     unsigned int y;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    for (x = 0; x < headless_term->width; ++x)
-        for (y = 0; y < headless_term->height; ++y)
-            set(headless_term, x, y, 'E');
-    dump("DEALN", vt100, headless_term);
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    for (x = 0; x < vt100->width; ++x)
+        for (y = 0; y < vt100->height; ++y)
+            set(vt100, x, y, 'E');
+    dump("DEALN", term_emul, vt100);
 }
 
 /*
@@ -692,26 +697,26 @@ This sequence causes the active position to move downward one line
 without changing the column position. If the active position is at the
 bottom margin, a scroll up is performed. Format Effector
 */
-void IND(struct term_emul *vt100)
+void IND(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int x;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    if (headless_term->y >= headless_term->margin_bottom)
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    if (vt100->y >= vt100->margin_bottom)
     {
         /* SCROLL */
-        headless_term->top_line = (headless_term->top_line + 1) % (headless_term->height * SCROLLBACK);
-        for (x = 0; x < headless_term->width; ++x)
-         set(headless_term, x, headless_term->margin_bottom, '\0');
+        vt100->top_line = (vt100->top_line + 1) % (vt100->height * SCROLLBACK);
+        for (x = 0; x < vt100->width; ++x)
+         set(vt100, x, vt100->margin_bottom, '\0');
 
     }
     else
     {
         /* Do not scroll, just move downward on the current display space */
-        headless_term->y += 1;
+        vt100->y += 1;
     }
-    dump("IND", vt100, headless_term);
+    dump("IND", term_emul, vt100);
 }
 /*
 RI – Reverse Index
@@ -722,22 +727,22 @@ Move the active position to the same horizontal position on the
 preceding line. If the active position is at the top margin, a scroll
 down is performed. Format Effector
 */
-void RI(struct term_emul *vt100)
+void RI(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    if (headless_term->y == 0)
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    if (vt100->y == 0)
     {
         /* SCROLL */
-        headless_term->top_line = (headless_term->top_line - 1) % (headless_term->height * SCROLLBACK);
+        vt100->top_line = (vt100->top_line - 1) % (vt100->height * SCROLLBACK);
     }
     else
     {
         /* Do not scroll, just move upward on the current display space */
-        headless_term->y -= 1;
+        vt100->y -= 1;
     }
-    dump("RI", vt100, headless_term);
+    dump("RI", term_emul, vt100);
 }
 
 /*
@@ -749,26 +754,26 @@ This sequence causes the active position to move to the first position
 on the next line downward. If the active position is at the bottom
 margin, a scroll up is performed. Format Effector
 */
-void NEL(struct term_emul *vt100)
+void NEL(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int x;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    if (headless_term->y >= headless_term->margin_bottom)
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    if (vt100->y >= vt100->margin_bottom)
     {
         /* SCROLL */
-        headless_term->top_line = (headless_term->top_line + 1) % (headless_term->height * SCROLLBACK);
-        for (x = 0; x < headless_term->width; ++x)
-            set(headless_term, x, headless_term->margin_bottom, '\0');
+        vt100->top_line = (vt100->top_line + 1) % (vt100->height * SCROLLBACK);
+        for (x = 0; x < vt100->width; ++x)
+            set(vt100, x, vt100->margin_bottom, '\0');
     }
     else
     {
         /* Do not scroll, just move downward on the current display space */
-        headless_term->y += 1;
+        vt100->y += 1;
     }
-    headless_term->x = 0;
-    dump("NEL", vt100, headless_term);
+    vt100->x = 0;
+    dump("NEL", term_emul, vt100);
 }
 
 /*
@@ -783,22 +788,22 @@ upward. A parameter value of n moves the active position n lines
 upward. If an attempt is made to move the cursor above the top margin,
 the cursor stops at the top margin. Editor Function
 */
-void CUU(struct term_emul *vt100)
+void CUU(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int arg0;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
+    vt100 = (struct vt100_term *)term_emul->user_data;
     arg0 = 1;
-    if (vt100->argc > 0)
-        arg0 = vt100->argv[0];
+    if (term_emul->argc > 0)
+        arg0 = term_emul->argv[0];
     if (arg0 == 0)
         arg0 = 1;
-    if (arg0 <= headless_term->y)
-        headless_term->y -= arg0;
+    if (arg0 <= vt100->y)
+        vt100->y -= arg0;
     else
-        headless_term->y = 0;
-    dump("CUU", vt100, headless_term);
+        vt100->y = 0;
+    dump("CUU", term_emul, vt100);
 }
 
 /*
@@ -814,21 +819,21 @@ position is moved n lines downward. In an attempt is made to move the
 cursor below the bottom margin, the cursor stops at the bottom
 margin. Editor Function
 */
-void CUD(struct term_emul *vt100)
+void CUD(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int arg0;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
+    vt100 = (struct vt100_term *)term_emul->user_data;
     arg0 = 1;
-    if (vt100->argc > 0)
-        arg0 = vt100->argv[0];
+    if (term_emul->argc > 0)
+        arg0 = term_emul->argv[0];
     if (arg0 == 0)
         arg0 = 1;
-    headless_term->y += arg0;
-    if (headless_term->y >= headless_term->height)
-        headless_term->y = headless_term->height - 1;
-    dump("CUD", vt100, headless_term);
+    vt100->y += arg0;
+    if (vt100->y >= vt100->height)
+        vt100->y = vt100->height - 1;
+    dump("CUD", term_emul, vt100);
 }
 
 /*
@@ -843,21 +848,21 @@ of n moves the active position n positions to the right. If an attempt
 is made to move the cursor to the right of the right margin, the
 cursor stops at the right margin. Editor Function
 */
-void CUF(struct term_emul *vt100)
+void CUF(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int arg0;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
+    vt100 = (struct vt100_term *)term_emul->user_data;
     arg0 = 1;
-    if (vt100->argc > 0)
-        arg0 = vt100->argv[0];
+    if (term_emul->argc > 0)
+        arg0 = term_emul->argv[0];
     if (arg0 == 0)
         arg0 = 1;
-    headless_term->x += arg0;
-    if (headless_term->x >= headless_term->width)
-        headless_term->x = headless_term->width - 1;
-    dump("CUF", vt100, headless_term);
+    vt100->x += arg0;
+    if (vt100->x >= vt100->width)
+        vt100->x = vt100->width - 1;
+    dump("CUF", term_emul, vt100);
 }
 
 /*
@@ -872,22 +877,22 @@ parameter value is n, the active position is moved n positions to the
 left. If an attempt is made to move the cursor to the left of the left
 margin, the cursor stops at the left margin. Editor Function
 */
-void CUB(struct term_emul *vt100)
+void CUB(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int arg0;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
+    vt100 = (struct vt100_term *)term_emul->user_data;
     arg0 = 1;
-    if (vt100->argc > 0)
-        arg0 = vt100->argv[0];
+    if (term_emul->argc > 0)
+        arg0 = term_emul->argv[0];
     if (arg0 == 0)
         arg0 = 1;
-    if (arg0 < headless_term->x)
-        headless_term->x -= arg0;
+    if (arg0 < vt100->x)
+        vt100->x -= arg0;
     else
-        headless_term->x = 0;
-    dump("CUB", vt100, headless_term);
+        vt100->x = 0;
+    dump("CUB", term_emul, vt100);
 }
 
 /*
@@ -906,40 +911,40 @@ Parameter Parameter Meaning
 2         Erase all of the display – all lines are erased, changed to
           single-width, and the cursor does not move.
 */
-void ED(struct term_emul *vt100)
+void ED(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int arg0;
     unsigned int x;
     unsigned int y;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
+    vt100 = (struct vt100_term *)term_emul->user_data;
     arg0 = 0;
-    if (vt100->argc > 0)
-        arg0 = vt100->argv[0];
+    if (term_emul->argc > 0)
+        arg0 = term_emul->argv[0];
     if (arg0 == 0)
     {
-        for (x = headless_term->x; x < headless_term->width; ++x)
-            set(headless_term, x, headless_term->y, '\0');
-        for (x = 0 ; x < headless_term->width; ++x)
-            for (y = headless_term->y + 1; y < headless_term->height; ++y)
-                set(headless_term, x, y, '\0');
+        for (x = vt100->x; x < vt100->width; ++x)
+            set(vt100, x, vt100->y, '\0');
+        for (x = 0 ; x < vt100->width; ++x)
+            for (y = vt100->y + 1; y < vt100->height; ++y)
+                set(vt100, x, y, '\0');
     }
     else if (arg0 == 1)
     {
-        for (x = 0 ; x < headless_term->width; ++x)
-            for (y = 0; y < headless_term->y; ++y)
-                set(headless_term, x, y, '\0');
-        for (x = 0; x <= headless_term->x; ++x)
-            set(headless_term, x, headless_term->y, '\0');
+        for (x = 0 ; x < vt100->width; ++x)
+            for (y = 0; y < vt100->y; ++y)
+                set(vt100, x, y, '\0');
+        for (x = 0; x <= vt100->x; ++x)
+            set(vt100, x, vt100->y, '\0');
     }
     else if (arg0 == 2)
     {
-        for (x = 0 ; x < headless_term->width; ++x)
-            for (y = 0; y < headless_term->height; ++y)
-                set(headless_term, x, y, '\0');
+        for (x = 0 ; x < vt100->width; ++x)
+            for (y = 0; y < vt100->height; ++y)
+                set(vt100, x, y, '\0');
     }
-    dump("ED", vt100, headless_term);
+    dump("ED", term_emul, vt100);
 }
 
 /*
@@ -956,32 +961,32 @@ Parameter Parameter Meaning
 1         Erase from the start of the screen to the active position, inclusive
 2         Erase all of the line, inclusive
 */
-void EL(struct term_emul *vt100)
+void EL(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int arg0;
     unsigned int x;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
+    vt100 = (struct vt100_term *)term_emul->user_data;
     arg0 = 0;
-    if (vt100->argc > 0)
-        arg0 = vt100->argv[0];
+    if (term_emul->argc > 0)
+        arg0 = term_emul->argv[0];
     if (arg0 == 0)
     {
-        for (x = headless_term->x; x < headless_term->width; ++x)
-            set(headless_term, x, headless_term->y, '\0');
+        for (x = vt100->x; x < vt100->width; ++x)
+            set(vt100, x, vt100->y, '\0');
     }
     else if (arg0 == 1)
     {
-        for (x = 0; x <= headless_term->x; ++x)
-            set(headless_term, x, headless_term->y, '\0');
+        for (x = 0; x <= vt100->x; ++x)
+            set(vt100, x, vt100->y, '\0');
     }
     else if (arg0 == 2)
     {
-        for (x = 0; x < headless_term->width; ++x)
-            set(headless_term, x, headless_term->y, '\0');
+        for (x = 0; x < vt100->width; ++x)
+            set(vt100, x, vt100->y, '\0');
     }
-    dump("EL", vt100, headless_term);
+    dump("EL", term_emul, vt100);
 }
 
 /*
@@ -1000,47 +1005,47 @@ with its editor function counterpart, CUP. The numbering of lines and
 columns depends on the reset or set state of the origin mode
 (DECOM). Format Effector
 */
-void HVP(struct term_emul *vt100)
+void HVP(struct term_emul *term_emul)
 {
-    CUP(vt100);
+    CUP(term_emul);
 }
 
-void TBC(struct term_emul *vt100)
+void TBC(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
     unsigned int i;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    if (vt100->argc == 0 || vt100->argv[0] == 0)
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    if (term_emul->argc == 0 || term_emul->argv[0] == 0)
     {
-        headless_term->tabulations[headless_term->x] = '-';
+        vt100->tabulations[vt100->x] = '-';
     }
-    else if (vt100->argc == 1 && vt100->argv[0] == 3)
+    else if (term_emul->argc == 1 && term_emul->argv[0] == 3)
     {
         for (i = 0; i < 132; ++i)
-            headless_term->tabulations[i] = '-';
+            vt100->tabulations[i] = '-';
     }
-    dump("TBC", vt100, headless_term);
-    my_putstr(headless_term->tabulations);
+    dump("TBC", term_emul, vt100);
+    my_putstr(vt100->tabulations);
     my_putchar('\n');
 }
 
-void HTS(struct term_emul *vt100)
+void HTS(struct term_emul *term_emul)
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
-    headless_term->tabulations[headless_term->x] = '|';
-    dump("HTS", vt100, headless_term);
-    my_putstr(headless_term->tabulations);
+    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100->tabulations[vt100->x] = '|';
+    dump("HTS", term_emul, vt100);
+    my_putstr(vt100->tabulations);
     my_putchar('\n');
 }
 
-static void vt100_write(struct term_emul *vt100, char c __attribute__((unused)))
+static void vt100_write(struct term_emul *term_emul, char c __attribute__((unused)))
 {
-    struct headless_terminal *headless_term;
+    struct vt100_term *vt100;
 
-    headless_term = (struct headless_terminal *)vt100->user_data;
+    vt100 = (struct vt100_term *)term_emul->user_data;
     my_putstr("Writing(\\");
     my_putnbr_base((int)c, "01234567");
     if (c > ' ')
@@ -1052,68 +1057,68 @@ static void vt100_write(struct term_emul *vt100, char c __attribute__((unused)))
     my_putstr(")\n");
     if (c == '\r')
     {
-        headless_term->x = 0;
+        vt100->x = 0;
         return ;
     }
     if (c == '\n' || c == '\013' || c == '\014')
     {
-        if (MODE_IS_SET(headless_term, LNM))
-            NEL(vt100);
+        if (MODE_IS_SET(vt100, LNM))
+            NEL(term_emul);
         else
-            IND(vt100);
+            IND(term_emul);
         return ;
     }
-    if (c == '\010' && headless_term->x > 0)
+    if (c == '\010' && vt100->x > 0)
     {
-        if (headless_term->x == headless_term->width)
-            headless_term->x -= 1;
-        headless_term->x -= 1;
+        if (vt100->x == vt100->width)
+            vt100->x -= 1;
+        vt100->x -= 1;
         return ;
     }
     if (c == '\t')
     {
         do
         {
-            set(headless_term, headless_term->x, headless_term->y, ' ');
-            headless_term->x += 1;
-        } while (headless_term->x < headless_term->width && headless_term->tabulations[headless_term->x] == '-');
+            set(vt100, vt100->x, vt100->y, ' ');
+            vt100->x += 1;
+        } while (vt100->x < vt100->width && vt100->tabulations[vt100->x] == '-');
         return ;
     }
     if (c == '\016')
     {
-        headless_term->selected_charset = 0;
+        vt100->selected_charset = 0;
         return ;
     }
     if (c == '\017')
     {
-        headless_term->selected_charset = 1;
+        vt100->selected_charset = 1;
         return ;
     }
-    if (headless_term->x == headless_term->width)
+    if (vt100->x == vt100->width)
     {
-        if (MODE_IS_SET(headless_term, DECAWM))
+        if (MODE_IS_SET(vt100, DECAWM))
         {
             my_putstr("DECAWM is set, so we auto wrap\n");
-            NEL(vt100);
+            NEL(term_emul);
         }
         else
         {
             my_putstr("DECAWM is not set, so we're not moving\n");
-            headless_term->x -= 1;
+            vt100->x -= 1;
         }
     }
     my_putstr("To ");
-    my_putnbr(headless_term->x); my_putstr(", "); my_putnbr(headless_term->y);
+    my_putnbr(vt100->x); my_putstr(", "); my_putnbr(vt100->y);
     my_putstr("\n");
-    set(headless_term, headless_term->x, headless_term->y, c);
-    headless_term->x += 1;
+    set(vt100, vt100->x, vt100->y, c);
+    vt100->x += 1;
     my_putstr("Cursor is now at ");
-    my_putnbr(headless_term->x); my_putstr(", "); my_putnbr(headless_term->y);
+    my_putnbr(vt100->x); my_putstr(", "); my_putnbr(vt100->y);
     my_putstr("\n");
-    dump("WRITE", vt100, headless_term);
+    dump("WRITE", term_emul, vt100);
 }
 
-int main_loop(struct term_emul *vt100, int master)
+int main_loop(struct term_emul *term_emul, int master)
 {
     char buffer[4096];
     fd_set rfds;
@@ -1151,8 +1156,8 @@ int main_loop(struct term_emul *vt100, int master)
             }
             buffer[read_size] = '\0';
             my_strdump(buffer);
-            term_read_str(vt100, buffer);
-            disp(vt100->user_data);
+            term_read_str(term_emul, buffer);
+            disp(term_emul->user_data);
         }
     }
 }
@@ -1174,17 +1179,17 @@ void restore_termios(int fd)
     ioctl(fd, TCSETS, &backup);
 }
 
-void unimplemented(struct term_emul* vt100, char *seq, char chr)
+void unimplemented(struct term_emul* term_emul, char *seq, char chr)
 {
     unsigned int argc;
 
     write(1, "UNIMPLEMENTED ", 14);
     write(1, seq, strlen(seq));
     write(1, "(", 1);
-    for (argc = 0; argc < vt100->argc; ++argc)
+    for (argc = 0; argc < term_emul->argc; ++argc)
     {
-        my_putnbr(vt100->argv[argc]);
-        if (argc != vt100->argc - 1)
+        my_putnbr(term_emul->argv[argc]);
+        if (argc != term_emul->argc - 1)
             write(1, ", ", 2);
     }
     write(1, ")\\0", 1);
@@ -1192,36 +1197,75 @@ void unimplemented(struct term_emul* vt100, char *seq, char chr)
     write(1, "\n", 1);
 }
 
+struct term_emul *vt100(void)
+{
+    struct term_emul *term;
+    struct term_callbacks callbacks;
+    struct vt100_term *vt100;
+
+    vt100 = malloc(sizeof(*vt100));
+    if (vt100 == NULL)
+        return NULL;
+    memset(&callbacks, 0, sizeof(callbacks));
+    vt100->height = 24;
+    vt100->width = 80;
+    vt100->screen = calloc(132 * SCROLLBACK * vt100->height,
+                          sizeof(*vt100->screen));
+    vt100->frozen_screen = calloc(132 * vt100->height,
+                                 sizeof(*vt100->frozen_screen));
+    vt100->tabulations = malloc(132);
+    vt100->margin_top = 0;
+    vt100->margin_bottom = vt100->height - 1;
+    vt100->selected_charset = 0;
+    vt100->x = 0;
+    vt100->y = 0;
+    vt100->modes = MASK_DECANM;
+    vt100->top_line = 0;
+    callbacks.csi.f = HVP;
+    callbacks.csi.K = EL;
+    callbacks.csi.c = DA;
+    callbacks.csi.h = SM;
+    callbacks.csi.l = RM;
+    callbacks.csi.J = ED;
+    callbacks.csi.H = CUP;
+    callbacks.csi.C = CUF;
+    callbacks.csi.B = CUD;
+    callbacks.csi.r = DECSTBM;
+    callbacks.csi.m = SGR;
+    callbacks.csi.A = CUU;
+    callbacks.csi.g = TBC;
+    callbacks.esc.H = HTS;
+    callbacks.csi.D = CUB;
+    callbacks.esc.E = NEL;
+    callbacks.esc.D = IND;
+    callbacks.esc.M = RI;
+    callbacks.esc.n8 = DECRC;
+    callbacks.esc.n7 = DECSC;
+    callbacks.hash.n8 = DECALN;
+
+    term = term_init(80, 24, &callbacks, vt100_write);
+    term->user_data = &vt100;
+    TBC(term);
+    term->unimplemented = unimplemented;
+    return term;
+}
+
 int main(int ac, char **av)
 {
-    struct term_emul *vt100;
-    struct term_callbacks callbacks;
-    struct headless_terminal headless_term;
     int child;
+    int master;
     struct winsize winsize;
+    struct term_emul *term;
 
     if (ac == 1)
     {
-        puts("Usage : test PROGNAME");
+        puts("Usage: test PROGNAME");
         return EXIT_FAILURE;
     }
     set_non_canonical(0);
-    memset(&callbacks, 0, sizeof(callbacks));
-    winsize.ws_row = headless_term.height = 24;
-    winsize.ws_col = headless_term.width = 80;
-    headless_term.screen = calloc(132 * SCROLLBACK * headless_term.height,
-                             sizeof(*headless_term.screen));
-    headless_term.frozen_screen = calloc(132 * headless_term.height,
-                             sizeof(*headless_term.frozen_screen));
-    headless_term.tabulations = malloc(132);
-    headless_term.margin_top = 0;
-    headless_term.margin_bottom = headless_term.height - 1;
-    headless_term.selected_charset = 0;
-    headless_term.x = 0;
-    headless_term.y = 0;
-    headless_term.modes = MASK_DECANM;
-    headless_term.top_line = 0;
-    child = forkpty(&headless_term.master, NULL, NULL, NULL);
+    winsize.ws_row = 24;
+    winsize.ws_col = 24;
+    child = forkpty(&master, NULL, NULL, NULL);
     if (child == CHILD)
     {
         setsid();
@@ -1231,35 +1275,10 @@ int main(int ac, char **av)
     }
     else
     {
-        callbacks.csi.HVP = (term_action)HVP;
-        callbacks.csi.EL = (term_action)EL;
-        callbacks.csi.DA = (term_action)DA;
-        callbacks.csi.SM = (term_action)SM;
-        callbacks.csi.RM = (term_action)RM;
-        callbacks.csi.ED = (term_action)ED;
-        callbacks.csi.CUP = (term_action)CUP;
-        callbacks.csi.CUF = (term_action)CUF;
-        callbacks.csi.RM = (term_action)RM;
-        callbacks.csi.CUD = (term_action)CUD;
-        callbacks.csi.DECSTBM = (term_action)DECSTBM;
-        callbacks.csi.SGR = (term_action)SGR;
-        callbacks.csi.CUU = (term_action)CUU;
-        callbacks.csi.TBC = (term_action)TBC;
-        callbacks.esc.HTS = (term_action)HTS;
-        callbacks.csi.CUB = (term_action)CUB;
-        callbacks.esc.NEL = (term_action)NEL;
-        callbacks.esc.IND = (term_action)IND;
-        callbacks.esc.RI = (term_action)RI;
-        callbacks.esc.DECRC = (term_action)DECRC;
-        callbacks.esc.DECSC = (term_action)DECSC;
-        callbacks.hash.DECALN = (term_action)DECALN;
-
-        vt100 = term_init(80, 24, &callbacks, vt100_write);
-        vt100->user_data = &headless_term;
-        TBC(vt100);
-        vt100->unimplemented = unimplemented;
-        ioctl(headless_term.master, TIOCSWINSZ, &winsize);
-        main_loop(vt100, headless_term.master);
+        term = vt100();
+        ioctl(master, TIOCSWINSZ, &winsize);
+        term->fd = master;
+        main_loop(term, master);
     }
     restore_termios(0);
     return EXIT_SUCCESS;
