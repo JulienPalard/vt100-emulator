@@ -120,7 +120,7 @@ struct term_emul
     void                   (*write)(struct term_emul *, char c);
     char                   stack[TERM_STACK_SIZE];
     unsigned int           stack_ptr;
-    struct term_callbacks  *callbacks;
+    struct term_callbacks  callbacks;
     char                   flag;
     void                   *user_data;
     void                   (*unimplemented)(struct term_emul*,
@@ -129,7 +129,6 @@ struct term_emul
 };
 
 struct term_emul *term_init(unsigned int width, unsigned int height,
-                            struct term_callbacks *callbacks,
                             void (*write)(struct term_emul *, char));
 
 void term_read(struct term_emul *term, char c);

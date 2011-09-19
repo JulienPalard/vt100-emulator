@@ -57,13 +57,13 @@ void term_parse_params(struct term_emul *term)
 void term_call_CSI(struct term_emul *term, char c)
 {
     term_parse_params(term);
-    if (((term_action *)&term->callbacks->csi)[c - '0'] == NULL)
+    if (((term_action *)&term->callbacks.csi)[c - '0'] == NULL)
     {
         if (term->unimplemented != NULL)
             term->unimplemented(term, "CSI", c);
         goto leave;
     }
-    ((term_action *)&term->callbacks->csi)[c - '0'](term);
+    ((term_action *)&term->callbacks.csi)[c - '0'](term);
 leave:
     term->state = INIT;
     term->flag = '\0';
@@ -73,13 +73,13 @@ leave:
 
 void term_call_ESC(struct term_emul *term, char c)
 {
-    if (((term_action *)&term->callbacks->esc)[c - '0'] == NULL)
+    if (((term_action *)&term->callbacks.esc)[c - '0'] == NULL)
     {
         if (term->unimplemented != NULL)
             term->unimplemented(term, "ESC", c);
         goto leave;
     }
-    ((term_action *)&term->callbacks->esc)[c - '0'](term);
+    ((term_action *)&term->callbacks.esc)[c - '0'](term);
 leave:
     term->state = INIT;
     term->stack_ptr = 0;
@@ -88,13 +88,13 @@ leave:
 
 void term_call_HASH(struct term_emul *term, char c)
 {
-    if (((term_action *)&term->callbacks->hash)[c - '0'] == NULL)
+    if (((term_action *)&term->callbacks.hash)[c - '0'] == NULL)
     {
         if (term->unimplemented != NULL)
             term->unimplemented(term, "HASH", c);
         goto leave;
     }
-    ((term_action *)&term->callbacks->hash)[c - '0'](term);
+    ((term_action *)&term->callbacks.hash)[c - '0'](term);
 leave:
     term->state = INIT;
     term->stack_ptr = 0;
@@ -104,13 +104,13 @@ leave:
 void term_call_GSET(struct term_emul *term, char c)
 {
     if (c < '0' || c > 'B'
-        || ((term_action *)&term->callbacks->scs)[c - '0'] == NULL)
+        || ((term_action *)&term->callbacks.scs)[c - '0'] == NULL)
     {
         if (term->unimplemented != NULL)
             term->unimplemented(term, "GSET", c);
         goto leave;
     }
-    ((term_action *)&term->callbacks->scs)[c - '0'](term);
+    ((term_action *)&term->callbacks.scs)[c - '0'](term);
 leave:
     term->state = INIT;
     term->stack_ptr = 0;
@@ -186,18 +186,16 @@ void term_read_str(struct term_emul *term, char *c)
 }
 
 struct term_emul *term_init(unsigned int width, unsigned int height,
-                              struct term_callbacks *callbacks,
                               void (*vtwrite)(struct term_emul *, char))
 {
     struct term_emul *term;
 
-    term = malloc(sizeof(*term));
+    term = calloc(1, sizeof(*term));
     term->width = width;
     term->height = height;
     term->cursor_pos_x = 0;
     term->cursor_pos_y = 0;
     term->stack_ptr = 0;
-    term->callbacks = callbacks;
     term->state = INIT;
     term->write = vtwrite;
     return term;
