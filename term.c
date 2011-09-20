@@ -21,14 +21,14 @@
 **
 */
 
-void term_push(struct term_emul *term, char c)
+static void term_push(struct term_emul *term, char c)
 {
     if (term->stack_ptr >= TERM_STACK_SIZE)
         return ;
     term->stack[term->stack_ptr++] = c;
 }
 
-void term_parse_params(struct term_emul *term)
+static void term_parse_params(struct term_emul *term)
 {
     unsigned int i;
     int got_something;
@@ -54,7 +54,7 @@ void term_parse_params(struct term_emul *term)
     term->argc += got_something;
 }
 
-void term_call_CSI(struct term_emul *term, char c)
+static void term_call_CSI(struct term_emul *term, char c)
 {
     term_parse_params(term);
     if (((term_action *)&term->callbacks.csi)[c - '0'] == NULL)
@@ -71,7 +71,7 @@ leave:
     term->argc = 0;
 }
 
-void term_call_ESC(struct term_emul *term, char c)
+static void term_call_ESC(struct term_emul *term, char c)
 {
     if (((term_action *)&term->callbacks.esc)[c - '0'] == NULL)
     {
@@ -86,7 +86,7 @@ leave:
     term->argc = 0;
 }
 
-void term_call_HASH(struct term_emul *term, char c)
+static void term_call_HASH(struct term_emul *term, char c)
 {
     if (((term_action *)&term->callbacks.hash)[c - '0'] == NULL)
     {
@@ -101,7 +101,7 @@ leave:
     term->argc = 0;
 }
 
-void term_call_GSET(struct term_emul *term, char c)
+static void term_call_GSET(struct term_emul *term, char c)
 {
     if (c < '0' || c > 'B'
         || ((term_action *)&term->callbacks.scs)[c - '0'] == NULL)

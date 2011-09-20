@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "vt100.h"
 
-unsigned int get_mode_mask(unsigned int mode)
+static unsigned int get_mode_mask(unsigned int mode)
 {
     switch (mode)
     {
@@ -159,7 +159,7 @@ no increase in character resolution.
     ((x + vt100->width * y) \
     % (vt100->width * SCROLLBACK * vt100->height))
 
-void set(struct vt100_term *headless_term,
+static void set(struct vt100_term *headless_term,
          unsigned int x, unsigned int y,
          char c)
 {
@@ -178,21 +178,21 @@ char get(struct vt100_term *vt100, unsigned int x, unsigned int y)
         return vt100->screen[SCREEN_PTR(vt100, x, y)];
 }
 
-void froze_line(struct vt100_term *vt100, unsigned int y)
+static void froze_line(struct vt100_term *vt100, unsigned int y)
 {
     memcpy(vt100->frozen_screen + vt100->width * y,
            vt100->screen + SCREEN_PTR(vt100, 0, y),
            vt100->width);
 }
 
-void unfroze_line(struct vt100_term *vt100, unsigned int y)
+static void unfroze_line(struct vt100_term *vt100, unsigned int y)
 {
     memcpy(vt100->screen + SCREEN_PTR(vt100, 0, y),
            vt100->frozen_screen + vt100->width * y,
            vt100->width);
 }
 
-void blank_screen(struct vt100_term *vt100_term)
+static void blank_screen(struct vt100_term *vt100_term)
 {
     unsigned int x;
     unsigned int y;
@@ -210,7 +210,7 @@ ESC 7
 This sequence causes the cursor position, graphic rendition, and
 character set to be saved. (See DECRC).
 */
-void DECSC(struct term_emul *term_emul)
+static void DECSC(struct term_emul *term_emul)
 {
     /*TODO: Save graphic rendition and charset.*/
     struct vt100_term *vt100;
@@ -231,7 +231,7 @@ by a separate parameter. [See Set Mode (SM) control sequence]. (See
 Modes following this section).
 
 */
-void RM(struct term_emul *term_emul)
+static void RM(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int mode;
@@ -268,7 +268,7 @@ HVP. Editor Function
 The numbering of lines depends on the state of the Origin Mode
 (DECOM).
 */
-void CUP(struct term_emul *term_emul)
+static void CUP(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     int arg0;
@@ -307,7 +307,7 @@ is specified by a separate parameter. A mode is considered set until
 it is reset by a reset mode (RM) control sequence.
 
 */
-void SM(struct term_emul *term_emul)
+static void SM(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int mode;
@@ -353,7 +353,7 @@ lines, i.e., the top margin must be less than the bottom margin. The
 cursor is placed in the home position (see Origin Mode DECOM).
 
 */
-void DECSTBM(struct term_emul *term_emul)
+static void DECSTBM(struct term_emul *term_emul)
 {
     unsigned int margin_top;
     unsigned int margin_bottom;
@@ -414,7 +414,7 @@ specifying either the underscore or the reverse attribute will
 activate the currently selected attribute. (See cursor selection in
 Chapter 1).
 */
-void SGR(struct term_emul *term_emul)
+static void SGR(struct term_emul *term_emul)
 {
     term_emul = term_emul;
     /* Just ignore them for now, we are rendering pure text only */
@@ -443,7 +443,7 @@ GPO and AVO                 ESC [?1;6c
 GPO, STP and AVO            ESC [?1;7c
 
 */
-void DA(struct term_emul *term_emul)
+static void DA(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
 
@@ -459,7 +459,7 @@ ESC 8
 This sequence causes the previously saved cursor position, graphic
 rendition, and character set to be restored.
 */
-void DECRC(struct term_emul *term_emul)
+static void DECRC(struct term_emul *term_emul)
 {
     /*TODO Save graphic rendition and charset */
     struct vt100_term *vt100;
@@ -478,7 +478,7 @@ This command fills the entire screen area with uppercase Es for screen
 focus and alignment. This command is used by DEC manufacturing and
 Field Service personnel.
 */
-void DECALN(struct term_emul *term_emul)
+static void DECALN(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int x;
@@ -499,7 +499,7 @@ This sequence causes the active position to move downward one line
 without changing the column position. If the active position is at the
 bottom margin, a scroll up is performed. Format Effector
 */
-void IND(struct term_emul *term_emul)
+static void IND(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int x;
@@ -528,7 +528,7 @@ Move the active position to the same horizontal position on the
 preceding line. If the active position is at the top margin, a scroll
 down is performed. Format Effector
 */
-void RI(struct term_emul *term_emul)
+static void RI(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
 
@@ -554,7 +554,7 @@ This sequence causes the active position to move to the first position
 on the next line downward. If the active position is at the bottom
 margin, a scroll up is performed. Format Effector
 */
-void NEL(struct term_emul *term_emul)
+static void NEL(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int x;
@@ -587,7 +587,7 @@ upward. A parameter value of n moves the active position n lines
 upward. If an attempt is made to move the cursor above the top margin,
 the cursor stops at the top margin. Editor Function
 */
-void CUU(struct term_emul *term_emul)
+static void CUU(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -617,7 +617,7 @@ position is moved n lines downward. In an attempt is made to move the
 cursor below the bottom margin, the cursor stops at the bottom
 margin. Editor Function
 */
-void CUD(struct term_emul *term_emul)
+static void CUD(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -645,7 +645,7 @@ of n moves the active position n positions to the right. If an attempt
 is made to move the cursor to the right of the right margin, the
 cursor stops at the right margin. Editor Function
 */
-void CUF(struct term_emul *term_emul)
+static void CUF(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -673,7 +673,7 @@ parameter value is n, the active position is moved n positions to the
 left. If an attempt is made to move the cursor to the left of the left
 margin, the cursor stops at the left margin. Editor Function
 */
-void CUB(struct term_emul *term_emul)
+static void CUB(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -706,7 +706,7 @@ Parameter Parameter Meaning
 2         Erase all of the display – all lines are erased, changed to
           single-width, and the cursor does not move.
 */
-void ED(struct term_emul *term_emul)
+static void ED(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -755,7 +755,7 @@ Parameter Parameter Meaning
 1         Erase from the start of the screen to the active position, inclusive
 2         Erase all of the line, inclusive
 */
-void EL(struct term_emul *term_emul)
+static void EL(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -798,12 +798,12 @@ with its editor function counterpart, CUP. The numbering of lines and
 columns depends on the reset or set state of the origin mode
 (DECOM). Format Effector
 */
-void HVP(struct term_emul *term_emul)
+static void HVP(struct term_emul *term_emul)
 {
     CUP(term_emul);
 }
 
-void TBC(struct term_emul *term_emul)
+static void TBC(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int i;
@@ -820,7 +820,7 @@ void TBC(struct term_emul *term_emul)
     }
 }
 
-void HTS(struct term_emul *term_emul)
+static void HTS(struct term_emul *term_emul)
 {
     struct vt100_term *vt100;
 

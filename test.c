@@ -4,7 +4,6 @@
 #include <string.h>
 #include <pty.h>
 #include <stdio.h>
-#include "term.h"
 #include "vt100.h"
 
 void my_putchar(char c)
