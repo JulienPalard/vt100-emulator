@@ -68,47 +68,15 @@ void my_strdump(char *str)
 
 void disp(struct vt100_term *vt100)
 {
-    char c;
-    unsigned int x;
     unsigned int y;
+    const char **lines;
 
-    write(1, "\n", 1);
-    for (x = 0; x < vt100->width + 1; ++x)
-        write(1, "-", 1);
-    write(1, "\n", 1);
+    lines = vt100_dump(vt100);
     for (y = 0; y < vt100->height; ++y)
     {
-        if (y < vt100->margin_top || y > vt100->margin_bottom)
-            write(1, "#", 1);
-        else
-            write(1, "|", 1);
-        for (x = 0; x < vt100->width; ++x)
-        {
-            if (x == vt100->x && y == vt100->y)
-                write(1, "\033[7m", 4);
-            c = get(vt100, x, y);
-            if (c == '\0')
-                c = ' ';
-            if (c > 31)
-            {
-                write(1, &c, 1);
-            }
-            else
-            {
-                my_putstr("Don't know how to print char ");
-                my_putnbr_base((int)c, "01234567");
-                my_putchar('\n');
-                exit(EXIT_FAILURE);
-            }
-            if (x == vt100->x && y == vt100->y)
-                write(1, "\033[0m", 4);
-        }
-        write(1, "|", 1);
+        write(1, lines[y], vt100->width);
         write(1, "\n", 1);
     }
-    for (x = 0; x < vt100->width + 2; ++x)
-        write(1, "-", 1);
-    write(1, "\n\n", 2);
 }
 
 void dump(char *title, struct term_emul *term_emul,
