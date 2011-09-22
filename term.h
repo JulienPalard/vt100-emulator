@@ -13,9 +13,9 @@ enum term_state
     CSI
 };
 
-struct term_emul;
+struct terminal;
 
-typedef void (*term_action)(struct term_emul *emul);
+typedef void (*term_action)(struct terminal *emul);
 
 struct ascii_callbacks
 {
@@ -108,7 +108,7 @@ struct term_callbacks
     struct ascii_callbacks scs;
 };
 
-struct term_emul
+struct terminal
 {
     unsigned int           width;
     unsigned int           height;
@@ -117,21 +117,21 @@ struct term_emul
     enum term_state        state;
     unsigned int           argc;
     unsigned int           argv[TERM_STACK_SIZE];
-    void                   (*write)(struct term_emul *, char c);
+    void                   (*write)(struct terminal *, char c);
     char                   stack[TERM_STACK_SIZE];
     unsigned int           stack_ptr;
     struct term_callbacks  callbacks;
     char                   flag;
     void                   *user_data;
-    void                   (*unimplemented)(struct term_emul*,
+    void                   (*unimplemented)(struct terminal*,
                                             char *seq, char chr);
     int                    fd;
 };
 
-struct term_emul *term_init(unsigned int width, unsigned int height,
-                            void (*write)(struct term_emul *, char));
-void term_default_unimplemented(struct term_emul* term, char *seq, char chr);
-void term_read(struct term_emul *term, char c);
-void term_read_str(struct term_emul *term, char *c);
+struct terminal *term_init(unsigned int width, unsigned int height,
+                            void (*write)(struct terminal *, char));
+void term_default_unimplemented(struct terminal* term, char *seq, char chr);
+void term_read(struct terminal *term, char c);
+void term_read_str(struct terminal *term, char *c);
 
 #endif

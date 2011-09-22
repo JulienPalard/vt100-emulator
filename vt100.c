@@ -210,7 +210,7 @@ static void blank_screen(struct vt100_term *vt100_term)
   This sequence causes the cursor position, graphic rendition, and
   character set to be saved. (See DECRC).
 */
-static void DECSC(struct term_emul *term_emul)
+static void DECSC(struct terminal *term_emul)
 {
     /*TODO: Save graphic rendition and charset.*/
     struct vt100_term *vt100;
@@ -231,7 +231,7 @@ static void DECSC(struct term_emul *term_emul)
   Modes following this section).
 
 */
-static void RM(struct term_emul *term_emul)
+static void RM(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int mode;
@@ -268,7 +268,7 @@ static void RM(struct term_emul *term_emul)
   The numbering of lines depends on the state of the Origin Mode
   (DECOM).
 */
-static void CUP(struct term_emul *term_emul)
+static void CUP(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     int arg0;
@@ -307,7 +307,7 @@ static void CUP(struct term_emul *term_emul)
   it is reset by a reset mode (RM) control sequence.
 
 */
-static void SM(struct term_emul *term_emul)
+static void SM(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int mode;
@@ -353,7 +353,7 @@ static void SM(struct term_emul *term_emul)
   cursor is placed in the home position (see Origin Mode DECOM).
 
 */
-static void DECSTBM(struct term_emul *term_emul)
+static void DECSTBM(struct terminal *term_emul)
 {
     unsigned int margin_top;
     unsigned int margin_bottom;
@@ -414,7 +414,7 @@ static void DECSTBM(struct term_emul *term_emul)
   activate the currently selected attribute. (See cursor selection in
   Chapter 1).
 */
-static void SGR(struct term_emul *term_emul)
+static void SGR(struct terminal *term_emul)
 {
     term_emul = term_emul;
     /* Just ignore them for now, we are rendering pure text only */
@@ -443,7 +443,7 @@ static void SGR(struct term_emul *term_emul)
   GPO, STP and AVO            ESC [?1;7c
 
 */
-static void DA(struct term_emul *term_emul)
+static void DA(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
 
@@ -459,7 +459,7 @@ static void DA(struct term_emul *term_emul)
   This sequence causes the previously saved cursor position, graphic
   rendition, and character set to be restored.
 */
-static void DECRC(struct term_emul *term_emul)
+static void DECRC(struct terminal *term_emul)
 {
     /*TODO Save graphic rendition and charset */
     struct vt100_term *vt100;
@@ -478,7 +478,7 @@ static void DECRC(struct term_emul *term_emul)
   focus and alignment. This command is used by DEC manufacturing and
   Field Service personnel.
 */
-static void DECALN(struct term_emul *term_emul)
+static void DECALN(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int x;
@@ -499,7 +499,7 @@ static void DECALN(struct term_emul *term_emul)
   without changing the column position. If the active position is at the
   bottom margin, a scroll up is performed. Format Effector
 */
-static void IND(struct term_emul *term_emul)
+static void IND(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int x;
@@ -528,7 +528,7 @@ static void IND(struct term_emul *term_emul)
   preceding line. If the active position is at the top margin, a scroll
   down is performed. Format Effector
 */
-static void RI(struct term_emul *term_emul)
+static void RI(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
 
@@ -554,7 +554,7 @@ static void RI(struct term_emul *term_emul)
   on the next line downward. If the active position is at the bottom
   margin, a scroll up is performed. Format Effector
 */
-static void NEL(struct term_emul *term_emul)
+static void NEL(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int x;
@@ -587,7 +587,7 @@ static void NEL(struct term_emul *term_emul)
   upward. If an attempt is made to move the cursor above the top margin,
   the cursor stops at the top margin. Editor Function
 */
-static void CUU(struct term_emul *term_emul)
+static void CUU(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -617,7 +617,7 @@ static void CUU(struct term_emul *term_emul)
   cursor below the bottom margin, the cursor stops at the bottom
   margin. Editor Function
 */
-static void CUD(struct term_emul *term_emul)
+static void CUD(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -645,7 +645,7 @@ static void CUD(struct term_emul *term_emul)
   is made to move the cursor to the right of the right margin, the
   cursor stops at the right margin. Editor Function
 */
-static void CUF(struct term_emul *term_emul)
+static void CUF(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -673,7 +673,7 @@ static void CUF(struct term_emul *term_emul)
   left. If an attempt is made to move the cursor to the left of the left
   margin, the cursor stops at the left margin. Editor Function
 */
-static void CUB(struct term_emul *term_emul)
+static void CUB(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -706,7 +706,7 @@ static void CUB(struct term_emul *term_emul)
   2         Erase all of the display – all lines are erased, changed to
   single-width, and the cursor does not move.
 */
-static void ED(struct term_emul *term_emul)
+static void ED(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -755,7 +755,7 @@ static void ED(struct term_emul *term_emul)
   1         Erase from the start of the screen to the active position, inclusive
   2         Erase all of the line, inclusive
 */
-static void EL(struct term_emul *term_emul)
+static void EL(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int arg0;
@@ -798,12 +798,12 @@ static void EL(struct term_emul *term_emul)
   columns depends on the reset or set state of the origin mode
   (DECOM). Format Effector
 */
-static void HVP(struct term_emul *term_emul)
+static void HVP(struct terminal *term_emul)
 {
     CUP(term_emul);
 }
 
-static void TBC(struct term_emul *term_emul)
+static void TBC(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
     unsigned int i;
@@ -820,7 +820,7 @@ static void TBC(struct term_emul *term_emul)
     }
 }
 
-static void HTS(struct term_emul *term_emul)
+static void HTS(struct terminal *term_emul)
 {
     struct vt100_term *vt100;
 
@@ -828,7 +828,7 @@ static void HTS(struct term_emul *term_emul)
     vt100->tabulations[vt100->x] = '|';
 }
 
-static void vt100_write(struct term_emul *term_emul, char c __attribute__((unused)))
+static void vt100_write(struct terminal *term_emul, char c __attribute__((unused)))
 {
     struct vt100_term *vt100;
 
@@ -895,9 +895,9 @@ const char **vt100_dump(struct vt100_term *vt100)
     return (const char **)vt100->lines;
 }
 
-struct term_emul *vt100_init(void (*unimplemented)(struct term_emul* term_emul, char *seq, char chr))
+struct terminal *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr))
 {
-    struct term_emul *term;
+    struct terminal *term;
     struct vt100_term *vt100;
 
     vt100 = calloc(1, sizeof(*vt100));

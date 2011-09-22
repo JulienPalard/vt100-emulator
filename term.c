@@ -26,14 +26,14 @@
 **
 */
 
-static void term_push(struct term_emul *term, char c)
+static void term_push(struct terminal *term, char c)
 {
     if (term->stack_ptr >= TERM_STACK_SIZE)
         return ;
     term->stack[term->stack_ptr++] = c;
 }
 
-static void term_parse_params(struct term_emul *term)
+static void term_parse_params(struct terminal *term)
 {
     unsigned int i;
     int got_something;
@@ -59,7 +59,7 @@ static void term_parse_params(struct term_emul *term)
     term->argc += got_something;
 }
 
-static void term_call_CSI(struct term_emul *term, char c)
+static void term_call_CSI(struct terminal *term, char c)
 {
     term_parse_params(term);
     if (((term_action *)&term->callbacks.csi)[c - '0'] == NULL)
@@ -76,7 +76,7 @@ leave:
     term->argc = 0;
 }
 
-static void term_call_ESC(struct term_emul *term, char c)
+static void term_call_ESC(struct terminal *term, char c)
 {
     if (((term_action *)&term->callbacks.esc)[c - '0'] == NULL)
     {
@@ -91,7 +91,7 @@ leave:
     term->argc = 0;
 }
 
-static void term_call_HASH(struct term_emul *term, char c)
+static void term_call_HASH(struct terminal *term, char c)
 {
     if (((term_action *)&term->callbacks.hash)[c - '0'] == NULL)
     {
@@ -106,7 +106,7 @@ leave:
     term->argc = 0;
 }
 
-static void term_call_GSET(struct term_emul *term, char c)
+static void term_call_GSET(struct terminal *term, char c)
 {
     if (c < '0' || c > 'B'
         || ((term_action *)&term->callbacks.scs)[c - '0'] == NULL)
@@ -137,7 +137,7 @@ leave:
 **  |   |   \_ term_call_GSET()
 **  \_ term->write()
 */
-void term_read(struct term_emul *term, char c)
+void term_read(struct terminal *term, char c)
 {
     if (term->state == INIT)
     {
@@ -184,14 +184,14 @@ void term_read(struct term_emul *term, char c)
     }
 }
 
-void term_read_str(struct term_emul *term, char *c)
+void term_read_str(struct terminal *term, char *c)
 {
     while (*c)
         term_read(term, *c++);
 }
 
 #ifndef NDEBUG
-void term_default_unimplemented(struct term_emul* term, char *seq, char chr)
+void term_default_unimplemented(struct terminal* term, char *seq, char chr)
 {
     unsigned int argc;
 
@@ -205,7 +205,7 @@ void term_default_unimplemented(struct term_emul* term, char *seq, char chr)
     fprintf(stderr, ")%o\n", chr);
 }
 #else
-void term_default_unimplemented(struct term_emul* term, char *seq, char chr)
+void term_default_unimplemented(struct terminal* term, char *seq, char chr)
 {
     term = term;
     seq = seq;
@@ -213,10 +213,10 @@ void term_default_unimplemented(struct term_emul* term, char *seq, char chr)
 }
 #endif
 
-struct term_emul *term_init(unsigned int width, unsigned int height,
-                              void (*vtwrite)(struct term_emul *, char))
+struct terminal *term_init(unsigned int width, unsigned int height,
+                              void (*vtwrite)(struct terminal *, char))
 {
-    struct term_emul *term;
+    struct terminal *term;
 
     term = calloc(1, sizeof(*term));
     term->width = width;
