@@ -7,11 +7,14 @@
 
 
 /*
-** Term implement a terminal, (vt100 like)
-** It expose an API to implement a specific terminal.
-** Actually I implement vt100 in vt100.c
+** Terminal implement a terminal, (vt100 like)
+** Basically it parses escape sequences to call
+** appropriated callbacks.
 **
-** term.c parses escape sequences like
+** It expose a simple API to implement a specific terminal.
+** Actually I implement vt100 in terminal_vt100.c
+**
+** terminal.c parses escape sequences like
 ** \033[4;2H
 ** It allows control chars to be inside the sequence like :
 ** \033[4\n;2H
@@ -20,9 +23,15 @@
 ** \033(...
 **
 ** The API is simple, it consists of a structure term_callbacks (see
-** term.h) where 4 members points to a ascii_callbacks structure.
+** terminal.h) where 4 members points to an ascii_callbacks structure.
 ** Ascii callbacks is only a struct with some ascii chars where you
-** can plug your callbacks functions. see vt100.c as an example.
+** can plug your callbacks functions. see terminal_vt100.c as an example.
+**
+** Typically when terminal parses \033[42;43m
+** it calls callbacks->csi->m();
+**
+** Parameters (here 42;43) are stored in terminal->argc and terminal->argv
+** argv is an array of integers of length argc.
 **
 */
 
