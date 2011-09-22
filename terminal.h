@@ -1,5 +1,5 @@
-#ifndef __TERM_H__
-#define __TERM_H__
+#ifndef __TERMINAL_H__
+#define __TERMINAL_H__
 
 #define TERM_STACK_SIZE 1024
 

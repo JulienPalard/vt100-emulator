@@ -1,5 +1,5 @@
-#ifndef __VT100_H__
-#define __VT100_H__
+#ifndef __TERMINAL_VT100_H__
+#define __TERMINAL_VT100_H__
 
 #include "terminal.h"
 
@@ -44,7 +44,7 @@
 ** The top of the frozen_screen holds the top margin
 ** while the bottom holds the bottom margin.
 */
-struct vt100_term
+struct terminal_vt100
 {
     struct terminal *terminal;
     unsigned int width;
@@ -64,7 +64,8 @@ struct vt100_term
     char         *lines[80];
 };
 
-struct vt100_term *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr));
-char vt100_get(struct vt100_term *vt100, unsigned int x, unsigned int y);
-const char **vt100_dump(struct vt100_term *vt100);
+struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr));
+char vt100_get(struct terminal_vt100 *vt100, unsigned int x, unsigned int y);
+const char **vt100_dump(struct terminal_vt100 *vt100);
+
 #endif

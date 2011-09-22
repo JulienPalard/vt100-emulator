@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "vt100.h"
+#include "terminal_vt100.h"
 
 static unsigned int get_mode_mask(unsigned int mode)
 {
@@ -159,7 +159,7 @@ static unsigned int get_mode_mask(unsigned int mode)
     ((x + vt100->width * y)                         \
      % (vt100->width * SCROLLBACK * vt100->height))
 
-static void set(struct vt100_term *headless_term,
+static void set(struct terminal_vt100 *headless_term,
                 unsigned int x, unsigned int y,
                 char c)
 {
@@ -170,7 +170,7 @@ static void set(struct vt100_term *headless_term,
 }
 
 
-char vt100_get(struct vt100_term *vt100, unsigned int x, unsigned int y)
+char vt100_get(struct terminal_vt100 *vt100, unsigned int x, unsigned int y)
 {
     if (y < vt100->margin_top || y > vt100->margin_bottom)
         return vt100->frozen_screen[FROZEN_SCREEN_PTR(vt100, x, y)];
@@ -178,28 +178,28 @@ char vt100_get(struct vt100_term *vt100, unsigned int x, unsigned int y)
         return vt100->screen[SCREEN_PTR(vt100, x, y)];
 }
 
-static void froze_line(struct vt100_term *vt100, unsigned int y)
+static void froze_line(struct terminal_vt100 *vt100, unsigned int y)
 {
     memcpy(vt100->frozen_screen + vt100->width * y,
            vt100->screen + SCREEN_PTR(vt100, 0, y),
            vt100->width);
 }
 
-static void unfroze_line(struct vt100_term *vt100, unsigned int y)
+static void unfroze_line(struct terminal_vt100 *vt100, unsigned int y)
 {
     memcpy(vt100->screen + SCREEN_PTR(vt100, 0, y),
            vt100->frozen_screen + vt100->width * y,
            vt100->width);
 }
 
-static void blank_screen(struct vt100_term *vt100_term)
+static void blank_screen(struct terminal_vt100 *terminal_vt100)
 {
     unsigned int x;
     unsigned int y;
 
-    for (x = 0; x < vt100_term->width; ++x)
-        for (y = 0; y < vt100_term->height; ++y)
-            set(vt100_term, x, y, ' ');
+    for (x = 0; x < terminal_vt100->width; ++x)
+        for (y = 0; y < terminal_vt100->height; ++y)
+            set(terminal_vt100, x, y, ' ');
 }
 
 /*
@@ -213,9 +213,9 @@ static void blank_screen(struct vt100_term *vt100_term)
 static void DECSC(struct terminal *term_emul)
 {
     /*TODO: Save graphic rendition and charset.*/
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     vt100->saved_x = vt100->x;
     vt100->saved_y = vt100->y;
 }
@@ -233,10 +233,10 @@ static void DECSC(struct terminal *term_emul)
 */
 static void RM(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int mode;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     if (term_emul->argc > 0)
     {
         mode = term_emul->argv[0];
@@ -270,11 +270,11 @@ static void RM(struct terminal *term_emul)
 */
 static void CUP(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     int arg0;
     int arg1;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     arg0 = 0;
     arg1 = 0;
     if (term_emul->argc > 0)
@@ -309,11 +309,11 @@ static void CUP(struct terminal *term_emul)
 */
 static void SM(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int mode;
     unsigned int saved_argc;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     if (term_emul->argc > 0)
     {
         mode = term_emul->argv[0];
@@ -357,10 +357,10 @@ static void DECSTBM(struct terminal *term_emul)
 {
     unsigned int margin_top;
     unsigned int margin_bottom;
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int line;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
 
     if (term_emul->argc == 2)
     {
@@ -445,9 +445,9 @@ static void SGR(struct terminal *term_emul)
 */
 static void DA(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     write(term_emul->fd, "\033[?1;0c", 7); /* Do not write directly ? */
 }
 
@@ -462,9 +462,9 @@ static void DA(struct terminal *term_emul)
 static void DECRC(struct terminal *term_emul)
 {
     /*TODO Save graphic rendition and charset */
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     vt100->x = vt100->saved_x;
     vt100->y = vt100->saved_y;
 }
@@ -480,11 +480,11 @@ static void DECRC(struct terminal *term_emul)
 */
 static void DECALN(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int x;
     unsigned int y;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     for (x = 0; x < vt100->width; ++x)
         for (y = 0; y < vt100->height; ++y)
             set(vt100, x, y, 'E');
@@ -501,10 +501,10 @@ static void DECALN(struct terminal *term_emul)
 */
 static void IND(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int x;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     if (vt100->y >= vt100->margin_bottom)
     {
         /* SCROLL */
@@ -530,9 +530,9 @@ static void IND(struct terminal *term_emul)
 */
 static void RI(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     if (vt100->y == 0)
     {
         /* SCROLL */
@@ -556,10 +556,10 @@ static void RI(struct terminal *term_emul)
 */
 static void NEL(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int x;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     if (vt100->y >= vt100->margin_bottom)
     {
         /* SCROLL */
@@ -589,10 +589,10 @@ static void NEL(struct terminal *term_emul)
 */
 static void CUU(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int arg0;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     arg0 = 1;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -619,10 +619,10 @@ static void CUU(struct terminal *term_emul)
 */
 static void CUD(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int arg0;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     arg0 = 1;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -647,10 +647,10 @@ static void CUD(struct terminal *term_emul)
 */
 static void CUF(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int arg0;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     arg0 = 1;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -675,10 +675,10 @@ static void CUF(struct terminal *term_emul)
 */
 static void CUB(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int arg0;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     arg0 = 1;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -708,12 +708,12 @@ static void CUB(struct terminal *term_emul)
 */
 static void ED(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int arg0;
     unsigned int x;
     unsigned int y;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     arg0 = 0;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -757,11 +757,11 @@ static void ED(struct terminal *term_emul)
 */
 static void EL(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int arg0;
     unsigned int x;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     arg0 = 0;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -805,10 +805,10 @@ static void HVP(struct terminal *term_emul)
 
 static void TBC(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
     unsigned int i;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     if (term_emul->argc == 0 || term_emul->argv[0] == 0)
     {
         vt100->tabulations[vt100->x] = '-';
@@ -822,17 +822,17 @@ static void TBC(struct terminal *term_emul)
 
 static void HTS(struct terminal *term_emul)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     vt100->tabulations[vt100->x] = '|';
 }
 
-static void vt100_write(struct terminal *term_emul, char c __attribute__((unused)))
+static void vt100_write(struct terminal *term_emul, char c)
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
 
-    vt100 = (struct vt100_term *)term_emul->user_data;
+    vt100 = (struct terminal_vt100 *)term_emul->user_data;
     if (c == '\r')
     {
         vt100->x = 0;
@@ -883,7 +883,7 @@ static void vt100_write(struct terminal *term_emul, char c __attribute__((unused
     vt100->x += 1;
 }
 
-const char **vt100_dump(struct vt100_term *vt100)
+const char **vt100_dump(struct terminal_vt100 *vt100)
 {
     unsigned int y;
 
@@ -896,9 +896,9 @@ const char **vt100_dump(struct vt100_term *vt100)
 }
 
 /*TODO: put spaces instead of \0 in frozen_screen */
-struct vt100_term *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr))
+struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr))
 {
-    struct vt100_term *vt100;
+    struct terminal_vt100 *vt100;
 
     vt100 = calloc(1, sizeof(*vt100));
     if (vt100 == NULL)

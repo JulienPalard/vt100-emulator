@@ -5,7 +5,7 @@
 #include <pty.h>
 #include <stdio.h>
 #include "vt100_headless.h"
-#include "vt100.h"
+#include "terminal_vt100.h"
 
 void disp(struct vt100_headless *vt100)
 {

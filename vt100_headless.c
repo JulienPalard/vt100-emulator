@@ -7,7 +7,7 @@
 #include <pty.h>
 #include <stdlib.h>
 #include "vt100_headless.h"
-#include "vt100.h"
+#include "terminal_vt100.h"
 
 struct vt100_headless *vt100_headless_init(void)
 {

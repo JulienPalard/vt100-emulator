@@ -7,7 +7,7 @@ struct vt100_headless
 {
     int master;
     struct termios backup;
-    struct vt100_term *term;
+    struct terminal_vt100 *term;
     void (*changed)(struct vt100_headless *this);
 };
 
