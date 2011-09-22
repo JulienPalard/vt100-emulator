@@ -45,6 +45,7 @@ static void restore_termios(struct vt100_headless *this, int fd)
 /*     fprintf(stderr, "\n"); */
 /* } */
 
+#ifndef NDEBUG
 static void strdump(char *str)
 {
     while (*str != '\0')
@@ -57,6 +58,7 @@ static void strdump(char *str)
     }
     fprintf(stderr, "\n");
 }
+#endif
 
 static int main_loop(struct vt100_headless *this)
 {
@@ -95,7 +97,9 @@ static int main_loop(struct vt100_headless *this)
                 return EXIT_FAILURE;
             }
             buffer[read_size] = '\0';
+#ifndef NDEBUG
             strdump(buffer);
+#endif
             terminal_read_str(this->term->terminal, buffer);
             this->changed(this);
         }

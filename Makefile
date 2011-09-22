@@ -11,7 +11,7 @@ OBJ = $(SRC:.c=.o)
 CC = gcc
 INCLUDE = .
 DEFINE = _GNU_SOURCE
-CFLAGS = -DNDEBUG -g3 -Wextra -Wstrict-prototypes -Wall -ansi -pedantic -I$(INCLUDE)
+CFLAGS = -g3 -Wextra -Wstrict-prototypes -Wall -ansi -pedantic -I$(INCLUDE)
 LIB = -lutil
 RM = rm -f
 
