@@ -13,7 +13,7 @@ void disp(struct vt100_headless *vt100)
     struct vt100_term *term;
     const char **lines;
 
-    term = vt100->term->user_data;
+    term = vt100->term;
     lines = vt100_dump(term);
     for (y = 0; y < term->height; ++y)
     {

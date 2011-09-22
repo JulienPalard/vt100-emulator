@@ -170,7 +170,7 @@ static void set(struct vt100_term *headless_term,
 }
 
 
-char get(struct vt100_term *vt100, unsigned int x, unsigned int y)
+char vt100_get(struct vt100_term *vt100, unsigned int x, unsigned int y)
 {
     if (y < vt100->margin_top || y > vt100->margin_bottom)
         return vt100->frozen_screen[FROZEN_SCREEN_PTR(vt100, x, y)];
@@ -895,9 +895,9 @@ const char **vt100_dump(struct vt100_term *vt100)
     return (const char **)vt100->lines;
 }
 
-struct terminal *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr))
+/*TODO: put spaces instead of \0 in frozen_screen */
+struct vt100_term *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr))
 {
-    struct terminal *term;
     struct vt100_term *vt100;
 
     vt100 = calloc(1, sizeof(*vt100));
@@ -911,7 +911,7 @@ struct terminal *vt100_init(void (*unimplemented)(struct terminal* term_emul, ch
                                   sizeof(*vt100->frozen_screen));
     vt100->tabulations = malloc(132);
     if (vt100->tabulations == NULL)
-        return NULL; /* Need to free before returning ... */
+        return NULL; /*TODO: Need to free before returning ... */
     vt100->margin_top = 0;
     vt100->margin_bottom = vt100->height - 1;
     vt100->selected_charset = 0;
@@ -919,32 +919,32 @@ struct terminal *vt100_init(void (*unimplemented)(struct terminal* term_emul, ch
     vt100->y = 0;
     vt100->modes = MASK_DECANM;
     vt100->top_line = 0;
-    term = terminal_init();
-    term->width = 80;
-    term->height = 24;
-    term->write = vt100_write;
-    term->callbacks.csi.f = HVP;
-    term->callbacks.csi.K = EL;
-    term->callbacks.csi.c = DA;
-    term->callbacks.csi.h = SM;
-    term->callbacks.csi.l = RM;
-    term->callbacks.csi.J = ED;
-    term->callbacks.csi.H = CUP;
-    term->callbacks.csi.C = CUF;
-    term->callbacks.csi.B = CUD;
-    term->callbacks.csi.r = DECSTBM;
-    term->callbacks.csi.m = SGR;
-    term->callbacks.csi.A = CUU;
-    term->callbacks.csi.g = TBC;
-    term->callbacks.esc.H = HTS;
-    term->callbacks.csi.D = CUB;
-    term->callbacks.esc.E = NEL;
-    term->callbacks.esc.D = IND;
-    term->callbacks.esc.M = RI;
-    term->callbacks.esc.n8 = DECRC;
-    term->callbacks.esc.n7 = DECSC;
-    term->callbacks.hash.n8 = DECALN;
-    term->user_data = vt100;
-    term->unimplemented = unimplemented;
-    return term;
+    vt100->terminal = terminal_init();
+    vt100->terminal->user_data = vt100;
+    vt100->terminal->width = 80;
+    vt100->terminal->height = 24;
+    vt100->terminal->write = vt100_write;
+    vt100->terminal->callbacks.csi.f = HVP;
+    vt100->terminal->callbacks.csi.K = EL;
+    vt100->terminal->callbacks.csi.c = DA;
+    vt100->terminal->callbacks.csi.h = SM;
+    vt100->terminal->callbacks.csi.l = RM;
+    vt100->terminal->callbacks.csi.J = ED;
+    vt100->terminal->callbacks.csi.H = CUP;
+    vt100->terminal->callbacks.csi.C = CUF;
+    vt100->terminal->callbacks.csi.B = CUD;
+    vt100->terminal->callbacks.csi.r = DECSTBM;
+    vt100->terminal->callbacks.csi.m = SGR;
+    vt100->terminal->callbacks.csi.A = CUU;
+    vt100->terminal->callbacks.csi.g = TBC;
+    vt100->terminal->callbacks.esc.H = HTS;
+    vt100->terminal->callbacks.csi.D = CUB;
+    vt100->terminal->callbacks.esc.E = NEL;
+    vt100->terminal->callbacks.esc.D = IND;
+    vt100->terminal->callbacks.esc.M = RI;
+    vt100->terminal->callbacks.esc.n8 = DECRC;
+    vt100->terminal->callbacks.esc.n7 = DECSC;
+    vt100->terminal->callbacks.hash.n8 = DECALN;
+    vt100->terminal->unimplemented = unimplemented;
+    return vt100;
 }

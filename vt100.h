@@ -46,6 +46,7 @@
 */
 struct vt100_term
 {
+    struct terminal *terminal;
     unsigned int width;
     unsigned int height;
     unsigned int x;
@@ -63,7 +64,7 @@ struct vt100_term
     char         *lines[80];
 };
 
-struct terminal *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr));
-char get(struct vt100_term *vt100, unsigned int x, unsigned int y);
+struct vt100_term *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr));
+char vt100_get(struct vt100_term *vt100, unsigned int x, unsigned int y);
 const char **vt100_dump(struct vt100_term *vt100);
 #endif
