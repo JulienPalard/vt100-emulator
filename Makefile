@@ -25,7 +25,7 @@ all:
 		$(CC) -D $(DEFINE) -c $(CFLAGS) $< -o $(<:.c=.o)
 
 clean:
-		$(RM) $(NAME) *~ \#*\# *.o *.core
+		$(RM) $(NAME) *~ \#*\# *.o *core
 
 re:		clean all
 
