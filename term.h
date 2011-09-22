@@ -130,6 +130,7 @@ struct term_emul
 
 struct term_emul *term_init(unsigned int width, unsigned int height,
                             void (*write)(struct term_emul *, char));
+void term_default_unimplemented(struct term_emul* term, char *seq, char chr);
 void term_read(struct term_emul *term, char c);
 void term_read_str(struct term_emul *term, char *c);
 

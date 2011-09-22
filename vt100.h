@@ -9,7 +9,6 @@
  * It's a vt100 implementation, that implements ANSI control function.
  */
 
-#define CHILD 0
 #define SCROLLBACK 3
 
 #define MASK_LNM     1

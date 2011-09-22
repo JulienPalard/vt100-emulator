@@ -1,5 +1,10 @@
 #include <stdlib.h>
+#ifndef NDEBUG
+#    include <stdio.h>
+#endif
+
 #include "term.h"
+
 
 /*
 ** Term implement a terminal, (vt100 like)
@@ -184,6 +189,29 @@ void term_read_str(struct term_emul *term, char *c)
     while (*c)
         term_read(term, *c++);
 }
+
+#ifndef NDEBUG
+void term_default_unimplemented(struct term_emul* term, char *seq, char chr)
+{
+    unsigned int argc;
+
+    fprintf(stderr, "WARNING: UNIMPLEMENTED %s (", seq);
+    for (argc = 0; argc < term->argc; ++argc)
+    {
+        fprintf(stderr, "%d", term->argv[argc]);
+        if (argc != term->argc - 1)
+            fprintf(stderr, ", ");
+    }
+    fprintf(stderr, ")%o\n", chr);
+}
+#else
+void term_default_unimplemented(struct term_emul* term, char *seq, char chr)
+{
+    term = term;
+    seq = seq;
+    chr = chr;
+}
+#endif
 
 struct term_emul *term_init(unsigned int width, unsigned int height,
                               void (*vtwrite)(struct term_emul *, char))
