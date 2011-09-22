@@ -919,7 +919,10 @@ struct terminal *vt100_init(void (*unimplemented)(struct terminal* term_emul, ch
     vt100->y = 0;
     vt100->modes = MASK_DECANM;
     vt100->top_line = 0;
-    term = term_init(80, 24, vt100_write);
+    term = terminal_init();
+    term->width = 80;
+    term->height = 24;
+    term->write = vt100_write;
     term->callbacks.csi.f = HVP;
     term->callbacks.csi.K = EL;
     term->callbacks.csi.c = DA;

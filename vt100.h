@@ -1,7 +1,7 @@
 #ifndef __VT100_H__
 #define __VT100_H__
 
-#include "term.h"
+#include "terminal.h"
 
 /*
  * Source : http://vt100.net/docs/vt100-ug/chapter3.html

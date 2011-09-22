@@ -128,10 +128,9 @@ struct terminal
     int                    fd;
 };
 
-struct terminal *term_init(unsigned int width, unsigned int height,
-                            void (*write)(struct terminal *, char));
-void term_default_unimplemented(struct terminal* term, char *seq, char chr);
-void term_read(struct terminal *term, char c);
-void term_read_str(struct terminal *term, char *c);
+struct terminal *terminal_init(void);
+void terminal_default_unimplemented(struct terminal* term, char *seq, char chr);
+void terminal_read(struct terminal *term, char c);
+void terminal_read_str(struct terminal *term, char *c);
 
 #endif

@@ -6,7 +6,7 @@
 ##
 
 NAME = vt100
-SRC = term.c vt100.c test.c vt100_headless.c
+SRC = terminal.c vt100.c test.c vt100_headless.c
 OBJ = $(SRC:.c=.o)
 CC = gcc
 INCLUDE = .
@@ -30,4 +30,4 @@ clean:
 re:		clean all
 
 check-syntax:
-		gcc -o /dev/null -S ${CHK_SOURCES}
+		gcc -Wall -Wextra -ansi -pedantic -o /dev/null -S ${CHK_SOURCES}
