@@ -10,17 +10,16 @@
 void disp(struct vt100_headless *vt100)
 {
     unsigned int y;
-    struct vt100_term *term;
     const char **lines;
 
-    term = vt100->term;
-    lines = vt100_dump(term);
-    for (y = 0; y < term->height; ++y)
+    lines = vt100_dump(vt100->term);
+    for (y = 0; y < vt100->term->height; ++y)
     {
-        write(1, lines[y], term->width);
+        write(1, lines[y], vt100->term->width);
         write(1, "\n", 1);
     }
 }
+
 int main(int ac, char **av)
 {
     struct vt100_headless *vt100_headless;
