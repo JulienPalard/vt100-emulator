@@ -905,12 +905,18 @@ struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_em
     vt100->height = 24;
     vt100->width = 80;
     vt100->screen = malloc(132 * SCROLLBACK * vt100->height);
+    if (vt100->screen == NULL)
+        goto free_vt100;
     memset(vt100->screen, ' ', 132 * SCROLLBACK * vt100->height);
     vt100->frozen_screen = malloc(132 * vt100->height);
+    if (vt100->frozen_screen == NULL)
+        goto free_screen;
     memset(vt100->frozen_screen, ' ', 132 * vt100->height);
     vt100->tabulations = malloc(132);
     if (vt100->tabulations == NULL)
-        return NULL; /*TODO: Need to free before returning ... */
+        goto free_frozen_screen;
+    if (vt100->tabulations == NULL)
+        return NULL;
     vt100->margin_top = 0;
     vt100->margin_bottom = vt100->height - 1;
     vt100->selected_charset = 0;
@@ -944,4 +950,11 @@ struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_em
     vt100->terminal->callbacks.hash.n8 = DECALN;
     vt100->terminal->unimplemented = unimplemented;
     return vt100;
+free_frozen_screen:
+    free(vt100->frozen_screen);
+free_screen:
+    free(vt100->screen);
+free_vt100:
+    free(vt100);
+    return NULL;
 }
