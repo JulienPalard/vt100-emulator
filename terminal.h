@@ -30,14 +30,43 @@
 ** Public members
 ** ==============
 **
-** terminal->user_data :
+** void *user_data :
 **     A (void *) where your implementation can store whatever you want
 **     to get it back on your callabks.
 **
-** terminal->write = vt100_write;
-** terminal->callbacks.csi.f = HVP;
+** void (*write)(struct terminal *, char c) :
+**    Hook for your implementation to recieve chars that are not
+**    escape sequences
 **
+** struct term_callbacks callbacks :
+**    Hooks for your callbacks to recieve escape sequences
 **
+** enum term_state state :
+**     During a callback, typically a scs, you can read here if it's a
+**     G1SET or a G0SET
+**
+** unsigned int argc :
+**     For your callbacks, to know how many parameters are available
+**     in argv.
+**
+** unsigned int argv[TERM_STACK_SIZE] :
+**     For your callbacks, parameters of escape sequences are accessible
+**     here.
+**     \033[42;43m will have 2 in argc and argv[0] = 42, argv[1] = 43
+**
+** char flag;
+**     Optinal constructor flag present before parameters, like in :
+**     \033[?1049h -> The flag will be '?'
+**     Otherwise the flag is set to '\0'
+**
+** void (*unimplemented)(struct terminal*, char *seq, char chr) :
+**     Can be NULL, you can hook here to know where the terminal parses an
+**     escape sequence on which you have not registered a callback.
+**
+** Exemple
+** =======
+**
+** See terminal_vt100.c for a working exemple.
 **
 */
 
