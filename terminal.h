@@ -1,6 +1,46 @@
 #ifndef __TERMINAL_H__
 #define __TERMINAL_H__
 
+/*
+**
+** Introduction
+** ============
+**
+** terminal.c is a basic level that parses escape sequences to call
+** appropriated callbacks permiting you to implement a specific terminal.
+**
+** Callbacks
+** =========
+**
+** terminal.c maps sequences to callbacks in this way :
+** \033...  maps to terminal->callbacks->esc
+** \033[... maps to terminal->callbacks->csi
+** \033#... maps to terminal->callbacks->hash
+** and \033( and \033) maps to terminal->callbacks->scs
+**
+** In 'callbacks', esc, csi, hash and scs are structs ascii_callbacks
+** where you can bind your callbacks.
+**
+** Typically when terminal parses \033[42;43m
+** it calls terminal->callbacks->csi->m(terminal);
+**
+** Parameters (here 42;43) are stored in terminal->argc and terminal->argv
+** argv is an array of integers of length argc.
+**
+** Public members
+** ==============
+**
+** terminal->user_data :
+**     A (void *) where your implementation can store whatever you want
+**     to get it back on your callabks.
+**
+** terminal->write = vt100_write;
+** terminal->callbacks.csi.f = HVP;
+**
+**
+**
+*/
+
 #define TERM_STACK_SIZE 1024
 
 enum term_state
@@ -110,8 +150,6 @@ struct term_callbacks
 
 struct terminal
 {
-    unsigned int           width;
-    unsigned int           height;
     unsigned int           cursor_pos_x;
     unsigned int           cursor_pos_y;
     enum term_state        state;

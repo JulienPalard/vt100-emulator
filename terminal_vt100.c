@@ -921,8 +921,6 @@ struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_em
     vt100->top_line = 0;
     vt100->terminal = terminal_init();
     vt100->terminal->user_data = vt100;
-    vt100->terminal->width = 80;
-    vt100->terminal->height = 24;
     vt100->terminal->write = vt100_write;
     vt100->terminal->callbacks.csi.f = HVP;
     vt100->terminal->callbacks.csi.K = EL;
