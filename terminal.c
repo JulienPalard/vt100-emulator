@@ -196,3 +196,8 @@ struct terminal *terminal_init(void)
 {
     return calloc(1, sizeof(struct terminal));
 }
+
+void terminal_destroy(struct terminal* this)
+{
+    free(this);
+}

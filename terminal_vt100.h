@@ -67,5 +67,6 @@ struct terminal_vt100
 struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr));
 char vt100_get(struct terminal_vt100 *vt100, unsigned int x, unsigned int y);
 const char **vt100_dump(struct terminal_vt100 *vt100);
+void terminal_this_destroy(struct terminal_vt100 *this);
 
 #endif

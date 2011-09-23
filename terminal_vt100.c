@@ -897,64 +897,76 @@ const char **vt100_dump(struct terminal_vt100 *vt100)
 
 struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr))
 {
-    struct terminal_vt100 *vt100;
+    struct terminal_vt100 *this;
 
-    vt100 = calloc(1, sizeof(*vt100));
-    if (vt100 == NULL)
+    this = calloc(1, sizeof(*this));
+    if (this == NULL)
         return NULL;
-    vt100->height = 24;
-    vt100->width = 80;
-    vt100->screen = malloc(132 * SCROLLBACK * vt100->height);
-    if (vt100->screen == NULL)
-        goto free_vt100;
-    memset(vt100->screen, ' ', 132 * SCROLLBACK * vt100->height);
-    vt100->frozen_screen = malloc(132 * vt100->height);
-    if (vt100->frozen_screen == NULL)
+    this->height = 24;
+    this->width = 80;
+    this->screen = malloc(132 * SCROLLBACK * this->height);
+    if (this->screen == NULL)
+        goto free_this;
+    memset(this->screen, ' ', 132 * SCROLLBACK * this->height);
+    this->frozen_screen = malloc(132 * this->height);
+    if (this->frozen_screen == NULL)
         goto free_screen;
-    memset(vt100->frozen_screen, ' ', 132 * vt100->height);
-    vt100->tabulations = malloc(132);
-    if (vt100->tabulations == NULL)
+    memset(this->frozen_screen, ' ', 132 * this->height);
+    this->tabulations = malloc(132);
+    if (this->tabulations == NULL)
         goto free_frozen_screen;
-    if (vt100->tabulations == NULL)
+    if (this->tabulations == NULL)
         return NULL;
-    vt100->margin_top = 0;
-    vt100->margin_bottom = vt100->height - 1;
-    vt100->selected_charset = 0;
-    vt100->x = 0;
-    vt100->y = 0;
-    vt100->modes = MASK_DECANM;
-    vt100->top_line = 0;
-    vt100->terminal = terminal_init();
-    vt100->terminal->user_data = vt100;
-    vt100->terminal->write = vt100_write;
-    vt100->terminal->callbacks.csi.f = HVP;
-    vt100->terminal->callbacks.csi.K = EL;
-    vt100->terminal->callbacks.csi.c = DA;
-    vt100->terminal->callbacks.csi.h = SM;
-    vt100->terminal->callbacks.csi.l = RM;
-    vt100->terminal->callbacks.csi.J = ED;
-    vt100->terminal->callbacks.csi.H = CUP;
-    vt100->terminal->callbacks.csi.C = CUF;
-    vt100->terminal->callbacks.csi.B = CUD;
-    vt100->terminal->callbacks.csi.r = DECSTBM;
-    vt100->terminal->callbacks.csi.m = SGR;
-    vt100->terminal->callbacks.csi.A = CUU;
-    vt100->terminal->callbacks.csi.g = TBC;
-    vt100->terminal->callbacks.esc.H = HTS;
-    vt100->terminal->callbacks.csi.D = CUB;
-    vt100->terminal->callbacks.esc.E = NEL;
-    vt100->terminal->callbacks.esc.D = IND;
-    vt100->terminal->callbacks.esc.M = RI;
-    vt100->terminal->callbacks.esc.n8 = DECRC;
-    vt100->terminal->callbacks.esc.n7 = DECSC;
-    vt100->terminal->callbacks.hash.n8 = DECALN;
-    vt100->terminal->unimplemented = unimplemented;
-    return vt100;
+    this->margin_top = 0;
+    this->margin_bottom = this->height - 1;
+    this->selected_charset = 0;
+    this->x = 0;
+    this->y = 0;
+    this->modes = MASK_DECANM;
+    this->top_line = 0;
+    this->terminal = terminal_init();
+    if (this->terminal == NULL)
+        goto free_tabulations;
+    this->terminal->user_data = this;
+    this->terminal->write = vt100_write;
+    this->terminal->callbacks.csi.f = HVP;
+    this->terminal->callbacks.csi.K = EL;
+    this->terminal->callbacks.csi.c = DA;
+    this->terminal->callbacks.csi.h = SM;
+    this->terminal->callbacks.csi.l = RM;
+    this->terminal->callbacks.csi.J = ED;
+    this->terminal->callbacks.csi.H = CUP;
+    this->terminal->callbacks.csi.C = CUF;
+    this->terminal->callbacks.csi.B = CUD;
+    this->terminal->callbacks.csi.r = DECSTBM;
+    this->terminal->callbacks.csi.m = SGR;
+    this->terminal->callbacks.csi.A = CUU;
+    this->terminal->callbacks.csi.g = TBC;
+    this->terminal->callbacks.esc.H = HTS;
+    this->terminal->callbacks.csi.D = CUB;
+    this->terminal->callbacks.esc.E = NEL;
+    this->terminal->callbacks.esc.D = IND;
+    this->terminal->callbacks.esc.M = RI;
+    this->terminal->callbacks.esc.n8 = DECRC;
+    this->terminal->callbacks.esc.n7 = DECSC;
+    this->terminal->callbacks.hash.n8 = DECALN;
+    this->terminal->unimplemented = unimplemented;
+    return this;
+free_tabulations:
+    free(this->tabulations);
 free_frozen_screen:
-    free(vt100->frozen_screen);
+    free(this->frozen_screen);
 free_screen:
-    free(vt100->screen);
-free_vt100:
-    free(vt100);
+    free(this->screen);
+free_this:
+    free(this);
     return NULL;
+}
+
+void terminal_this_destroy(struct terminal_vt100 *this)
+{
+    terminal_destroy(this->terminal);
+    free(this->screen);
+    free(this->frozen_screen);
+    free(this);
 }

@@ -196,8 +196,8 @@ struct terminal
 };
 
 struct terminal *terminal_init(void);
-void terminal_default_unimplemented(struct terminal* term, char *seq, char chr);
-void terminal_read(struct terminal *term, char c);
-void terminal_read_str(struct terminal *term, char *c);
-
+void terminal_default_unimplemented(struct terminal* this, char *seq, char chr);
+void terminal_read(struct terminal *this, char c);
+void terminal_read_str(struct terminal *this, char *c);
+void terminal_destroy(struct terminal* this);
 #endif
