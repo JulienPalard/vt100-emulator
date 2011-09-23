@@ -12,7 +12,7 @@ void disp(struct vt100_headless *vt100)
     unsigned int y;
     const char **lines;
 
-    lines = vt100_dump(vt100->term);
+    lines = vt100_getlines(vt100->term);
     write(1, "\n", 1);
     for (y = 0; y < vt100->term->height; ++y)
     {

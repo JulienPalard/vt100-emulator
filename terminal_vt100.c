@@ -883,7 +883,7 @@ static void vt100_write(struct terminal *term_emul, char c)
     vt100->x += 1;
 }
 
-const char **vt100_dump(struct terminal_vt100 *vt100)
+const char **vt100_getlines(struct terminal_vt100 *vt100)
 {
     unsigned int y;
 
