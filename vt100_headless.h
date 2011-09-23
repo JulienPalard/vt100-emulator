@@ -3,6 +3,8 @@
 
 #define CHILD 0
 
+#include "terminal_vt100.h"
+
 struct vt100_headless
 {
     int master;
