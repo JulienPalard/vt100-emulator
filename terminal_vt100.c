@@ -895,7 +895,6 @@ const char **vt100_dump(struct terminal_vt100 *vt100)
     return (const char **)vt100->lines;
 }
 
-/*TODO: put spaces instead of \0 in frozen_screen */
 struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr))
 {
     struct terminal_vt100 *vt100;
@@ -907,8 +906,8 @@ struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_em
     vt100->width = 80;
     vt100->screen = malloc(132 * SCROLLBACK * vt100->height);
     memset(vt100->screen, ' ', 132 * SCROLLBACK * vt100->height);
-    vt100->frozen_screen = calloc(132 * vt100->height,
-                                  sizeof(*vt100->frozen_screen));
+    vt100->frozen_screen = malloc(132 * vt100->height);
+    memset(vt100->frozen_screen, ' ', 132 * vt100->height);
     vt100->tabulations = malloc(132);
     if (vt100->tabulations == NULL)
         return NULL; /*TODO: Need to free before returning ... */
