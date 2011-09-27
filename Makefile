@@ -6,8 +6,18 @@
 ##
 
 NAME = vt100
-SRC = terminal.c terminal_vt100.c test.c vt100_headless.c
+VERSION = 0
+MINOR = 0
+RELEASE = 0
+
+LINKERNAME = lib$(NAME).so
+SONAME = $(LINKERNAME).$(VERSION)
+REALNAME = $(SONAME).$(MINOR).$(RELEASE)
+
+SRC = terminal.c terminal_vt100.c vt100_headless.c
+SRC_TEST = test.c
 OBJ = $(SRC:.c=.o)
+OBJ_TEST = $(SRC_TEST:.c=.o)
 CC = gcc
 INCLUDE = .
 DEFINE = _GNU_SOURCE
@@ -16,7 +26,10 @@ LIB = -lutil
 RM = rm -f
 
 $(NAME):	$(OBJ)
-		$(CC) $(CFLAGS) -o $(NAME) $(OBJ) $(LIB)
+		$(CC) --shared $(OBJ) $(LIB) -o $(LINKERNAME)
+
+test:	$(OBJ_TEST)
+		$(CC) $(OBJ_TEST) -L . -l$(NAME) -o test
 
 all:
 		@make $(NAME)
@@ -25,7 +38,7 @@ all:
 		$(CC) -D $(DEFINE) -c $(CFLAGS) $< -o $(<:.c=.o)
 
 clean:
-		$(RM) $(NAME) *~ \#*\# *.o *core
+		$(RM) $(LINKERNAME) test *~ \#*\# *.o *core
 
 re:		clean all
 
