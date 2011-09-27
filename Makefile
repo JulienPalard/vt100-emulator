@@ -14,12 +14,12 @@ LINKERNAME = lib$(NAME).so
 SONAME = $(LINKERNAME).$(VERSION)
 REALNAME = $(SONAME).$(MINOR).$(RELEASE)
 
-SRC = terminal.c terminal_vt100.c vt100_headless.c
-SRC_TEST = test.c
+SRC = src/terminal.c src/terminal_vt100.c src/vt100_headless.c
+SRC_TEST = src/test.c
 OBJ = $(SRC:.c=.o)
 OBJ_TEST = $(SRC_TEST:.c=.o)
 CC = gcc
-INCLUDE = .
+INCLUDE = src
 DEFINE = _GNU_SOURCE
 CFLAGS = -g3 -Wextra -Wstrict-prototypes -Wall -ansi -pedantic -I$(INCLUDE)
 LIB = -lutil
@@ -38,7 +38,7 @@ all:
 		$(CC) -D $(DEFINE) -c $(CFLAGS) $< -o $(<:.c=.o)
 
 clean:
-		$(RM) $(LINKERNAME) test *~ \#*\# *.o *core
+		$(RM) $(LINKERNAME) test src/*~ *~ src/\#*\# src/*.o \#*\# *.o *core
 
 re:		clean all
 
