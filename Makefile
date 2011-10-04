@@ -43,4 +43,4 @@ clean:
 re:		clean all
 
 check-syntax:
-		gcc -Wall -Wextra -ansi -pedantic -o /dev/null -S ${CHK_SOURCES}
+		gcc -Isrc -Wall -Wextra -ansi -pedantic -o /dev/null -S ${CHK_SOURCES}
