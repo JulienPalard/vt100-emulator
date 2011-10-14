@@ -6,7 +6,7 @@
 #include <string.h>
 #include <pty.h>
 #include <stdlib.h>
-#include "vt100_headless.h"
+#include "hl_vt100.h"
 
 struct vt100_headless *vt100_headless_init(void)
 {
@@ -99,7 +99,7 @@ static int main_loop(struct vt100_headless *this)
 #ifndef NDEBUG
             strdump(buffer);
 #endif
-            terminal_read_str(this->term->terminal, buffer);
+            lw_terminal_read_str(this->term->lw_terminal, buffer);
             this->changed(this);
         }
     }
@@ -125,9 +125,9 @@ void vt100_headless_fork(struct vt100_headless *this,
     }
     else
     {
-        this->term = vt100_init(terminal_default_unimplemented);
+        this->term = vt100_init(lw_terminal_default_unimplemented);
         ioctl(this->master, TIOCSWINSZ, &winsize);
-        this->term->terminal->fd = this->master;
+        this->term->lw_terminal->fd = this->master;
         main_loop(this);
     }
     restore_termios(this, 0);

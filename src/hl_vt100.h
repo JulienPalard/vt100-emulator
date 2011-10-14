@@ -3,13 +3,13 @@
 
 #define CHILD 0
 
-#include "terminal_vt100.h"
+#include "lw_terminal_vt100.h"
 
 struct vt100_headless
 {
     int master;
     struct termios backup;
-    struct terminal_vt100 *term;
+    struct lw_terminal_vt100 *term;
     void (*changed)(struct vt100_headless *this);
 };
 

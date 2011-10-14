@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "terminal_vt100.h"
+#include "lw_terminal_vt100.h"
 
 static unsigned int get_mode_mask(unsigned int mode)
 {
@@ -159,7 +159,7 @@ static unsigned int get_mode_mask(unsigned int mode)
     ((x + vt100->width * y)                         \
      % (vt100->width * SCROLLBACK * vt100->height))
 
-static void set(struct terminal_vt100 *headless_term,
+static void set(struct lw_terminal_vt100 *headless_term,
                 unsigned int x, unsigned int y,
                 char c)
 {
@@ -170,7 +170,7 @@ static void set(struct terminal_vt100 *headless_term,
 }
 
 
-char vt100_get(struct terminal_vt100 *vt100, unsigned int x, unsigned int y)
+char vt100_get(struct lw_terminal_vt100 *vt100, unsigned int x, unsigned int y)
 {
     if (y < vt100->margin_top || y > vt100->margin_bottom)
         return vt100->frozen_screen[FROZEN_SCREEN_PTR(vt100, x, y)];
@@ -178,28 +178,28 @@ char vt100_get(struct terminal_vt100 *vt100, unsigned int x, unsigned int y)
         return vt100->screen[SCREEN_PTR(vt100, x, y)];
 }
 
-static void froze_line(struct terminal_vt100 *vt100, unsigned int y)
+static void froze_line(struct lw_terminal_vt100 *vt100, unsigned int y)
 {
     memcpy(vt100->frozen_screen + vt100->width * y,
            vt100->screen + SCREEN_PTR(vt100, 0, y),
            vt100->width);
 }
 
-static void unfroze_line(struct terminal_vt100 *vt100, unsigned int y)
+static void unfroze_line(struct lw_terminal_vt100 *vt100, unsigned int y)
 {
     memcpy(vt100->screen + SCREEN_PTR(vt100, 0, y),
            vt100->frozen_screen + vt100->width * y,
            vt100->width);
 }
 
-static void blank_screen(struct terminal_vt100 *terminal_vt100)
+static void blank_screen(struct lw_terminal_vt100 *lw_terminal_vt100)
 {
     unsigned int x;
     unsigned int y;
 
-    for (x = 0; x < terminal_vt100->width; ++x)
-        for (y = 0; y < terminal_vt100->height; ++y)
-            set(terminal_vt100, x, y, ' ');
+    for (x = 0; x < lw_terminal_vt100->width; ++x)
+        for (y = 0; y < lw_terminal_vt100->height; ++y)
+            set(lw_terminal_vt100, x, y, ' ');
 }
 
 /*
@@ -210,12 +210,12 @@ static void blank_screen(struct terminal_vt100 *terminal_vt100)
   This sequence causes the cursor position, graphic rendition, and
   character set to be saved. (See DECRC).
 */
-static void DECSC(struct terminal *term_emul)
+static void DECSC(struct lw_terminal *term_emul)
 {
     /*TODO: Save graphic rendition and charset.*/
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     vt100->saved_x = vt100->x;
     vt100->saved_y = vt100->y;
 }
@@ -231,12 +231,12 @@ static void DECSC(struct terminal *term_emul)
   Modes following this section).
 
 */
-static void RM(struct terminal *term_emul)
+static void RM(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int mode;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     if (term_emul->argc > 0)
     {
         mode = term_emul->argv[0];
@@ -268,13 +268,13 @@ static void RM(struct terminal *term_emul)
   The numbering of lines depends on the state of the Origin Mode
   (DECOM).
 */
-static void CUP(struct terminal *term_emul)
+static void CUP(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     int arg0;
     int arg1;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     arg0 = 0;
     arg1 = 0;
     if (term_emul->argc > 0)
@@ -307,13 +307,13 @@ static void CUP(struct terminal *term_emul)
   it is reset by a reset mode (RM) control sequence.
 
 */
-static void SM(struct terminal *term_emul)
+static void SM(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int mode;
     unsigned int saved_argc;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     if (term_emul->argc > 0)
     {
         mode = term_emul->argv[0];
@@ -353,14 +353,14 @@ static void SM(struct terminal *term_emul)
   cursor is placed in the home position (see Origin Mode DECOM).
 
 */
-static void DECSTBM(struct terminal *term_emul)
+static void DECSTBM(struct lw_terminal *term_emul)
 {
     unsigned int margin_top;
     unsigned int margin_bottom;
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int line;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
 
     if (term_emul->argc == 2)
     {
@@ -414,7 +414,7 @@ static void DECSTBM(struct terminal *term_emul)
   activate the currently selected attribute. (See cursor selection in
   Chapter 1).
 */
-static void SGR(struct terminal *term_emul)
+static void SGR(struct lw_terminal *term_emul)
 {
     term_emul = term_emul;
     /* Just ignore them for now, we are rendering pure text only */
@@ -443,11 +443,11 @@ static void SGR(struct terminal *term_emul)
   GPO, STP and AVO            ESC [?1;7c
 
 */
-static void DA(struct terminal *term_emul)
+static void DA(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     write(term_emul->fd, "\033[?1;0c", 7); /* Do not write directly ? */
 }
 
@@ -459,12 +459,12 @@ static void DA(struct terminal *term_emul)
   This sequence causes the previously saved cursor position, graphic
   rendition, and character set to be restored.
 */
-static void DECRC(struct terminal *term_emul)
+static void DECRC(struct lw_terminal *term_emul)
 {
     /*TODO Save graphic rendition and charset */
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     vt100->x = vt100->saved_x;
     vt100->y = vt100->saved_y;
 }
@@ -478,13 +478,13 @@ static void DECRC(struct terminal *term_emul)
   focus and alignment. This command is used by DEC manufacturing and
   Field Service personnel.
 */
-static void DECALN(struct terminal *term_emul)
+static void DECALN(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int x;
     unsigned int y;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     for (x = 0; x < vt100->width; ++x)
         for (y = 0; y < vt100->height; ++y)
             set(vt100, x, y, 'E');
@@ -499,12 +499,12 @@ static void DECALN(struct terminal *term_emul)
   without changing the column position. If the active position is at the
   bottom margin, a scroll up is performed. Format Effector
 */
-static void IND(struct terminal *term_emul)
+static void IND(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int x;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     if (vt100->y >= vt100->margin_bottom)
     {
         /* SCROLL */
@@ -528,11 +528,11 @@ static void IND(struct terminal *term_emul)
   preceding line. If the active position is at the top margin, a scroll
   down is performed. Format Effector
 */
-static void RI(struct terminal *term_emul)
+static void RI(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     if (vt100->y == 0)
     {
         /* SCROLL */
@@ -554,12 +554,12 @@ static void RI(struct terminal *term_emul)
   on the next line downward. If the active position is at the bottom
   margin, a scroll up is performed. Format Effector
 */
-static void NEL(struct terminal *term_emul)
+static void NEL(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int x;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     if (vt100->y >= vt100->margin_bottom)
     {
         /* SCROLL */
@@ -587,12 +587,12 @@ static void NEL(struct terminal *term_emul)
   upward. If an attempt is made to move the cursor above the top margin,
   the cursor stops at the top margin. Editor Function
 */
-static void CUU(struct terminal *term_emul)
+static void CUU(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int arg0;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     arg0 = 1;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -617,12 +617,12 @@ static void CUU(struct terminal *term_emul)
   cursor below the bottom margin, the cursor stops at the bottom
   margin. Editor Function
 */
-static void CUD(struct terminal *term_emul)
+static void CUD(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int arg0;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     arg0 = 1;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -645,12 +645,12 @@ static void CUD(struct terminal *term_emul)
   is made to move the cursor to the right of the right margin, the
   cursor stops at the right margin. Editor Function
 */
-static void CUF(struct terminal *term_emul)
+static void CUF(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int arg0;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     arg0 = 1;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -673,12 +673,12 @@ static void CUF(struct terminal *term_emul)
   left. If an attempt is made to move the cursor to the left of the left
   margin, the cursor stops at the left margin. Editor Function
 */
-static void CUB(struct terminal *term_emul)
+static void CUB(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int arg0;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     arg0 = 1;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -706,14 +706,14 @@ static void CUB(struct terminal *term_emul)
   2         Erase all of the display – all lines are erased, changed to
   single-width, and the cursor does not move.
 */
-static void ED(struct terminal *term_emul)
+static void ED(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int arg0;
     unsigned int x;
     unsigned int y;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     arg0 = 0;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -755,13 +755,13 @@ static void ED(struct terminal *term_emul)
   1         Erase from the start of the screen to the active position, inclusive
   2         Erase all of the line, inclusive
 */
-static void EL(struct terminal *term_emul)
+static void EL(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int arg0;
     unsigned int x;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     arg0 = 0;
     if (term_emul->argc > 0)
         arg0 = term_emul->argv[0];
@@ -798,17 +798,17 @@ static void EL(struct terminal *term_emul)
   columns depends on the reset or set state of the origin mode
   (DECOM). Format Effector
 */
-static void HVP(struct terminal *term_emul)
+static void HVP(struct lw_terminal *term_emul)
 {
     CUP(term_emul);
 }
 
-static void TBC(struct terminal *term_emul)
+static void TBC(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
     unsigned int i;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     if (term_emul->argc == 0 || term_emul->argv[0] == 0)
     {
         vt100->tabulations[vt100->x] = '-';
@@ -820,19 +820,19 @@ static void TBC(struct terminal *term_emul)
     }
 }
 
-static void HTS(struct terminal *term_emul)
+static void HTS(struct lw_terminal *term_emul)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     vt100->tabulations[vt100->x] = '|';
 }
 
-static void vt100_write(struct terminal *term_emul, char c)
+static void vt100_write(struct lw_terminal *term_emul, char c)
 {
-    struct terminal_vt100 *vt100;
+    struct lw_terminal_vt100 *vt100;
 
-    vt100 = (struct terminal_vt100 *)term_emul->user_data;
+    vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
     if (c == '\r')
     {
         vt100->x = 0;
@@ -883,7 +883,7 @@ static void vt100_write(struct terminal *term_emul, char c)
     vt100->x += 1;
 }
 
-const char **vt100_getlines(struct terminal_vt100 *vt100)
+const char **vt100_getlines(struct lw_terminal_vt100 *vt100)
 {
     unsigned int y;
 
@@ -895,9 +895,9 @@ const char **vt100_getlines(struct terminal_vt100 *vt100)
     return (const char **)vt100->lines;
 }
 
-struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_emul, char *seq, char chr))
+struct lw_terminal_vt100 *vt100_init(void (*unimplemented)(struct lw_terminal* term_emul, char *seq, char chr))
 {
-    struct terminal_vt100 *this;
+    struct lw_terminal_vt100 *this;
 
     this = calloc(1, sizeof(*this));
     if (this == NULL)
@@ -924,33 +924,33 @@ struct terminal_vt100 *vt100_init(void (*unimplemented)(struct terminal* term_em
     this->y = 0;
     this->modes = MASK_DECANM;
     this->top_line = 0;
-    this->terminal = terminal_init();
-    if (this->terminal == NULL)
+    this->lw_terminal = lw_terminal_init();
+    if (this->lw_terminal == NULL)
         goto free_tabulations;
-    this->terminal->user_data = this;
-    this->terminal->write = vt100_write;
-    this->terminal->callbacks.csi.f = HVP;
-    this->terminal->callbacks.csi.K = EL;
-    this->terminal->callbacks.csi.c = DA;
-    this->terminal->callbacks.csi.h = SM;
-    this->terminal->callbacks.csi.l = RM;
-    this->terminal->callbacks.csi.J = ED;
-    this->terminal->callbacks.csi.H = CUP;
-    this->terminal->callbacks.csi.C = CUF;
-    this->terminal->callbacks.csi.B = CUD;
-    this->terminal->callbacks.csi.r = DECSTBM;
-    this->terminal->callbacks.csi.m = SGR;
-    this->terminal->callbacks.csi.A = CUU;
-    this->terminal->callbacks.csi.g = TBC;
-    this->terminal->callbacks.esc.H = HTS;
-    this->terminal->callbacks.csi.D = CUB;
-    this->terminal->callbacks.esc.E = NEL;
-    this->terminal->callbacks.esc.D = IND;
-    this->terminal->callbacks.esc.M = RI;
-    this->terminal->callbacks.esc.n8 = DECRC;
-    this->terminal->callbacks.esc.n7 = DECSC;
-    this->terminal->callbacks.hash.n8 = DECALN;
-    this->terminal->unimplemented = unimplemented;
+    this->lw_terminal->user_data = this;
+    this->lw_terminal->write = vt100_write;
+    this->lw_terminal->callbacks.csi.f = HVP;
+    this->lw_terminal->callbacks.csi.K = EL;
+    this->lw_terminal->callbacks.csi.c = DA;
+    this->lw_terminal->callbacks.csi.h = SM;
+    this->lw_terminal->callbacks.csi.l = RM;
+    this->lw_terminal->callbacks.csi.J = ED;
+    this->lw_terminal->callbacks.csi.H = CUP;
+    this->lw_terminal->callbacks.csi.C = CUF;
+    this->lw_terminal->callbacks.csi.B = CUD;
+    this->lw_terminal->callbacks.csi.r = DECSTBM;
+    this->lw_terminal->callbacks.csi.m = SGR;
+    this->lw_terminal->callbacks.csi.A = CUU;
+    this->lw_terminal->callbacks.csi.g = TBC;
+    this->lw_terminal->callbacks.esc.H = HTS;
+    this->lw_terminal->callbacks.csi.D = CUB;
+    this->lw_terminal->callbacks.esc.E = NEL;
+    this->lw_terminal->callbacks.esc.D = IND;
+    this->lw_terminal->callbacks.esc.M = RI;
+    this->lw_terminal->callbacks.esc.n8 = DECRC;
+    this->lw_terminal->callbacks.esc.n7 = DECSC;
+    this->lw_terminal->callbacks.hash.n8 = DECALN;
+    this->lw_terminal->unimplemented = unimplemented;
     return this;
 free_tabulations:
     free(this->tabulations);
@@ -963,9 +963,9 @@ free_this:
     return NULL;
 }
 
-void terminal_this_destroy(struct terminal_vt100 *this)
+void lw_terminal_this_destroy(struct lw_terminal_vt100 *this)
 {
-    terminal_destroy(this->terminal);
+    lw_terminal_destroy(this->lw_terminal);
     free(this->screen);
     free(this->frozen_screen);
     free(this);

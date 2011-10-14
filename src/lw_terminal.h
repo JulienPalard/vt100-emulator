@@ -82,9 +82,9 @@ enum term_state
     CSI
 };
 
-struct terminal;
+struct lw_terminal;
 
-typedef void (*term_action)(struct terminal *emul);
+typedef void (*term_action)(struct lw_terminal *emul);
 
 struct ascii_callbacks
 {
@@ -177,27 +177,27 @@ struct term_callbacks
     struct ascii_callbacks scs;
 };
 
-struct terminal
+struct lw_terminal
 {
     unsigned int           cursor_pos_x;
     unsigned int           cursor_pos_y;
     enum term_state        state;
     unsigned int           argc;
     unsigned int           argv[TERM_STACK_SIZE];
-    void                   (*write)(struct terminal *, char c);
+    void                   (*write)(struct lw_terminal *, char c);
     char                   stack[TERM_STACK_SIZE];
     unsigned int           stack_ptr;
     struct term_callbacks  callbacks;
     char                   flag;
     void                   *user_data;
-    void                   (*unimplemented)(struct terminal*,
+    void                   (*unimplemented)(struct lw_terminal*,
                                             char *seq, char chr);
     int                    fd;
 };
 
-struct terminal *terminal_init(void);
-void terminal_default_unimplemented(struct terminal* this, char *seq, char chr);
-void terminal_read(struct terminal *this, char c);
-void terminal_read_str(struct terminal *this, char *c);
-void terminal_destroy(struct terminal* this);
+struct lw_terminal *lw_terminal_init(void);
+void lw_terminal_default_unimplemented(struct lw_terminal* this, char *seq, char chr);
+void lw_terminal_read(struct lw_terminal *this, char c);
+void lw_terminal_read_str(struct lw_terminal *this, char *c);
+void lw_terminal_destroy(struct lw_terminal* this);
 #endif

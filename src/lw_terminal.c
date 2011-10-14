@@ -3,16 +3,16 @@
 #    include <stdio.h>
 #endif
 
-#include "terminal.h"
+#include "lw_terminal.h"
 
-static void terminal_push(struct terminal *this, char c)
+static void lw_terminal_push(struct lw_terminal *this, char c)
 {
     if (this->stack_ptr >= TERM_STACK_SIZE)
         return ;
     this->stack[this->stack_ptr++] = c;
 }
 
-static void terminal_parse_params(struct terminal *this)
+static void lw_terminal_parse_params(struct lw_terminal *this)
 {
     unsigned int i;
     int got_something;
@@ -38,9 +38,9 @@ static void terminal_parse_params(struct terminal *this)
     this->argc += got_something;
 }
 
-static void terminal_call_CSI(struct terminal *this, char c)
+static void lw_terminal_call_CSI(struct lw_terminal *this, char c)
 {
-    terminal_parse_params(this);
+    lw_terminal_parse_params(this);
     if (((term_action *)&this->callbacks.csi)[c - '0'] == NULL)
     {
         if (this->unimplemented != NULL)
@@ -55,7 +55,7 @@ leave:
     this->argc = 0;
 }
 
-static void terminal_call_ESC(struct terminal *this, char c)
+static void lw_terminal_call_ESC(struct lw_terminal *this, char c)
 {
     if (((term_action *)&this->callbacks.esc)[c - '0'] == NULL)
     {
@@ -70,7 +70,7 @@ leave:
     this->argc = 0;
 }
 
-static void terminal_call_HASH(struct terminal *this, char c)
+static void lw_terminal_call_HASH(struct lw_terminal *this, char c)
 {
     if (((term_action *)&this->callbacks.hash)[c - '0'] == NULL)
     {
@@ -85,7 +85,7 @@ leave:
     this->argc = 0;
 }
 
-static void terminal_call_GSET(struct terminal *this, char c)
+static void lw_terminal_call_GSET(struct lw_terminal *this, char c)
 {
     if (c < '0' || c > 'B'
         || ((term_action *)&this->callbacks.scs)[c - '0'] == NULL)
@@ -116,7 +116,7 @@ leave:
 **  |   |   \_ term_call_GSET()
 **  \_ term->write()
 */
-void terminal_read(struct terminal *this, char c)
+void lw_terminal_read(struct lw_terminal *this, char c)
 {
     if (this->state == INIT)
     {
@@ -136,41 +136,41 @@ void terminal_read(struct terminal *this, char c)
         else if (c == ')')
             this->state = G1SET;
         else if (c >= '0' && c <= 'z')
-            terminal_call_ESC(this, c);
+            lw_terminal_call_ESC(this, c);
         else this->write(this, c);
     }
     else if (this->state == HASH)
     {
         if (c >= '0' && c <= '9')
-            terminal_call_HASH(this, c);
+            lw_terminal_call_HASH(this, c);
         else
             this->write(this, c);
     }
     else if (this->state == G0SET || this->state == G1SET)
     {
-        terminal_call_GSET(this, c);
+        lw_terminal_call_GSET(this, c);
     }
     else if (this->state == CSI)
     {
         if (c == '?')
             this->flag = '?';
         else if (c == ';' || (c >= '0' && c <= '9'))
-            terminal_push(this, c);
+            lw_terminal_push(this, c);
         else if (c >= '?' && c <= 'z')
-            terminal_call_CSI(this, c);
+            lw_terminal_call_CSI(this, c);
         else
             this->write(this, c);
     }
 }
 
-void terminal_read_str(struct terminal *this, char *c)
+void lw_terminal_read_str(struct lw_terminal *this, char *c)
 {
     while (*c)
-        terminal_read(this, *c++);
+        lw_terminal_read(this, *c++);
 }
 
 #ifndef NDEBUG
-void terminal_default_unimplemented(struct terminal* this, char *seq, char chr)
+void lw_terminal_default_unimplemented(struct lw_terminal* this, char *seq, char chr)
 {
     unsigned int argc;
 
@@ -184,7 +184,7 @@ void terminal_default_unimplemented(struct terminal* this, char *seq, char chr)
     fprintf(stderr, ")%o\n", chr);
 }
 #else
-void terminal_default_unimplemented(struct terminal* this, char *seq, char chr)
+void lw_terminal_default_unimplemented(struct lw_terminal* this, char *seq, char chr)
 {
     this = this;
     seq = seq;
@@ -192,12 +192,12 @@ void terminal_default_unimplemented(struct terminal* this, char *seq, char chr)
 }
 #endif
 
-struct terminal *terminal_init(void)
+struct lw_terminal *lw_terminal_init(void)
 {
-    return calloc(1, sizeof(struct terminal));
+    return calloc(1, sizeof(struct lw_terminal));
 }
 
-void terminal_destroy(struct terminal* this)
+void lw_terminal_destroy(struct lw_terminal* this)
 {
     free(this);
 }
