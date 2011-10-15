@@ -1,0 +1,76 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH lw_terminal_parser 3 2011-09-27
+.SH NAME
+lw_terminal_init, lw_terminal_read, lw_terminal_read_str, lw_terminal_destroy  \- LW Terminal Parser
+.SH SYNOPSIS
+.B #include <lw_terminal_parser.h>
+.sp
+.BI "struct lw_terminal *lw_terminal_init(void);"
+.br
+.BI "void lw_terminal_read(struct lw_terminal *" this ", char " c ");"
+.br
+.BI "void lw_terminal_read_str(struct lw_terminal *" this " , char *" c ");"
+.br
+.BI "void lw_terminal_destroy(struct lw_terminal* " this ");"
+.SH DESCRIPTION
+lw_terminal_parser is a library to parse escape sequences commonly sent to terminals. The functions in lw_terminal_parser allows you to create, send data, and destroy a terminal parser. The function
+.BR lw_terminal_init ()
+allocates and prepare a new struct lw_terminal for you. Once a lw_terminal initialized you should hook your callbacks for escape sequences and write in lw_terminal->callbacks and lw_terminal->write. The you should call
+.BR lw_terminal_read_str()
+or
+.BR lw_terminal_read()
+to make the terminal parse them.
+Finally to free the struct terminal, call
+.BR lw_terminal_destroy().
+.PP
+lw_terminal->callback is a structure for you to hook into escape sequences.
+This struct is broke into substructures for each type of sequencec : esc, csi, hash, and scs.
+Each substructure is a struct ascii_callback that have one member for each ascii character, in order, starting from 0x30, '0'. Members from '9' to '9' are named "n0" to "n9", letters just have their name, and others characters are of the form hXX where XX is their hexadecimal notation.
+.PP
+Here is simple an example on how to hook a callback into a terminal emulator :
+.nf
+
+#include <stdlib.h>
+#include <stdio.h>
+#include "../src/lw_terminal_parser.h"
+
+static void vt100_write(struct lw_terminal *term_emul __attribute__((unused)),
+                        char c)
+{
+    printf("Got a char : %c\\n", c);
+}
+
+static void csi_f(struct lw_terminal *term_emul)
+{
+    printf("\\\\033[...f with %d parameters\\n", term_emul->argc);
+}
+
+static void csi_K(struct lw_terminal *term_emul)
+{
+    printf("\\\\033[...K with %d parameters\\n", term_emul->argc);
+}
+
+int main(void)
+{
+    struct lw_terminal *lw_terminal;
+
+    lw_terminal = lw_terminal_init();
+    if (lw_terminal == NULL)
+        return EXIT_FAILURE;
+    lw_terminal->write = vt100_write;
+    lw_terminal->callbacks.csi.f = csi_f;
+    lw_terminal->callbacks.csi.K = csi_K;
+    lw_terminal_read_str(lw_terminal, "\\033[2KHello world !\\033[f");
+    return EXIT_SUCCESS;
+}
+.fi
+
+.br
+.SH "AUTHOR"
+lw_terminal_parser was written by Julien Palard.
+.PP
+This manual page was written by Julien Palard <julien@palard.fr>,
+for the Debian project (and may be used by others).
