@@ -62,9 +62,13 @@ struct lw_terminal_vt100
     unsigned int selected_charset;
     unsigned int modes;
     char         *lines[80];
+    void         (*master_write)(void *user_data, void *buffer, size_t len);
+    void         *user_data;
 };
 
-struct lw_terminal_vt100 *vt100_init(void (*unimplemented)(struct lw_terminal* term_emul, char *seq, char chr));
+struct lw_terminal_vt100 *vt100_init(void *user_data,
+                                     void (*unimplemented)(struct lw_terminal* term_emul,
+                                                           char *seq, char chr));
 char vt100_get(struct lw_terminal_vt100 *vt100, unsigned int x, unsigned int y);
 const char **vt100_getlines(struct lw_terminal_vt100 *vt100);
 void lw_terminal_this_destroy(struct lw_terminal_vt100 *this);

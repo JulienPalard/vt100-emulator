@@ -192,7 +192,6 @@ struct lw_terminal
     void                   *user_data;
     void                   (*unimplemented)(struct lw_terminal*,
                                             char *seq, char chr);
-    int                    fd;
 };
 
 struct lw_terminal *lw_terminal_init(void);

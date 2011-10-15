@@ -105,6 +105,14 @@ static int main_loop(struct vt100_headless *this)
     }
 }
 
+void master_write(void *user_data, void *buffer, size_t len)
+{
+    struct vt100_headless *this;
+
+    this = (struct vt100_headless*)user_data;
+    write(this->master, buffer, len);
+}
+
 void vt100_headless_fork(struct vt100_headless *this,
                          const char *progname,
                          char *const argv[])
@@ -125,9 +133,9 @@ void vt100_headless_fork(struct vt100_headless *this,
     }
     else
     {
-        this->term = vt100_init(lw_terminal_default_unimplemented);
+        this->term = vt100_init(this, lw_terminal_default_unimplemented);
+        this->term->master_write = master_write;
         ioctl(this->master, TIOCSWINSZ, &winsize);
-        this->term->lw_terminal->fd = this->master;
         main_loop(this);
     }
     restore_termios(this, 0);

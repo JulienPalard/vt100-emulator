@@ -448,7 +448,7 @@ static void DA(struct lw_terminal *term_emul)
     struct lw_terminal_vt100 *vt100;
 
     vt100 = (struct lw_terminal_vt100 *)term_emul->user_data;
-    write(term_emul->fd, "\033[?1;0c", 7); /* Do not write directly ? */
+    vt100->master_write(vt100->user_data, "\033[?1;0c", 7);
 }
 
 /*
@@ -895,13 +895,15 @@ const char **vt100_getlines(struct lw_terminal_vt100 *vt100)
     return (const char **)vt100->lines;
 }
 
-struct lw_terminal_vt100 *vt100_init(void (*unimplemented)(struct lw_terminal* term_emul, char *seq, char chr))
+struct lw_terminal_vt100 *vt100_init(void *user_data,
+                                     void (*unimplemented)(struct lw_terminal* term_emul, char *seq, char chr))
 {
     struct lw_terminal_vt100 *this;
 
     this = calloc(1, sizeof(*this));
     if (this == NULL)
         return NULL;
+    this->user_data = user_data;
     this->height = 24;
     this->width = 80;
     this->screen = malloc(132 * SCROLLBACK * this->height);
