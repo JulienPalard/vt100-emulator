@@ -3,7 +3,7 @@
 #    include <stdio.h>
 #endif
 
-#include "lw_terminal.h"
+#include "lw_terminal_parser.h"
 
 static void lw_terminal_push(struct lw_terminal *this, char c)
 {

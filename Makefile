@@ -14,7 +14,7 @@ LINKERNAME = lib$(NAME).so
 SONAME = $(LINKERNAME).$(VERSION)
 REALNAME = $(SONAME).$(MINOR).$(RELEASE)
 
-SRC = src/lw_terminal.c src/lw_terminal_vt100.c src/hl_vt100.c
+SRC = src/lw_terminal_parser.c src/lw_terminal_vt100.c src/hl_vt100.c
 SRC_TEST = src/test.c
 OBJ = $(SRC:.c=.o)
 OBJ_TEST = $(SRC_TEST:.c=.o)

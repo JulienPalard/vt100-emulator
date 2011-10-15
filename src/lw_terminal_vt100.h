@@ -1,7 +1,7 @@
 #ifndef __LW_TERMINAL_VT100_H__
 #define __LW_TERMINAL_VT100_H__
 
-#include "lw_terminal.h"
+#include "lw_terminal_parser.h"
 
 /*
  * Source : http://vt100.net/docs/vt100-ug/chapter3.html
