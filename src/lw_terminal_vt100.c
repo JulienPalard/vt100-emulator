@@ -963,6 +963,11 @@ free_this:
     return NULL;
 }
 
+void lw_terminal_vt100_read_str(struct lw_terminal_vt100 *this, char *buffer)
+{
+    lw_terminal_read_str(this->lw_terminal, buffer);
+}
+
 void lw_terminal_this_destroy(struct lw_terminal_vt100 *this)
 {
     lw_terminal_destroy(this->lw_terminal);

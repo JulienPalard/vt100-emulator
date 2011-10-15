@@ -68,5 +68,6 @@ struct lw_terminal_vt100 *vt100_init(void (*unimplemented)(struct lw_terminal* t
 char vt100_get(struct lw_terminal_vt100 *vt100, unsigned int x, unsigned int y);
 const char **vt100_getlines(struct lw_terminal_vt100 *vt100);
 void lw_terminal_this_destroy(struct lw_terminal_vt100 *this);
+void lw_terminal_vt100_read_str(struct lw_terminal_vt100 *this, char *buffer);
 
 #endif

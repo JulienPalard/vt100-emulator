@@ -99,7 +99,7 @@ static int main_loop(struct vt100_headless *this)
 #ifndef NDEBUG
             strdump(buffer);
 #endif
-            lw_terminal_read_str(this->term->lw_terminal, buffer);
+            lw_terminal_vt100_read_str(this->term, buffer);
             this->changed(this);
         }
     }
