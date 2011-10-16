@@ -170,7 +170,7 @@ static void set(struct lw_terminal_vt100 *headless_term,
 }
 
 
-char vt100_get(struct lw_terminal_vt100 *vt100, unsigned int x, unsigned int y)
+char lw_terminal_vt100_get(struct lw_terminal_vt100 *vt100, unsigned int x, unsigned int y)
 {
     if (y < vt100->margin_top || y > vt100->margin_bottom)
         return vt100->frozen_screen[FROZEN_SCREEN_PTR(vt100, x, y)];
@@ -883,7 +883,7 @@ static void vt100_write(struct lw_terminal *term_emul, char c)
     vt100->x += 1;
 }
 
-const char **vt100_getlines(struct lw_terminal_vt100 *vt100)
+const char **lw_terminal_vt100_getlines(struct lw_terminal_vt100 *vt100)
 {
     unsigned int y;
 
@@ -895,7 +895,7 @@ const char **vt100_getlines(struct lw_terminal_vt100 *vt100)
     return (const char **)vt100->lines;
 }
 
-struct lw_terminal_vt100 *vt100_init(void *user_data,
+struct lw_terminal_vt100 *lw_terminal_vt100_init(void *user_data,
                                      void (*unimplemented)(struct lw_terminal* term_emul, char *seq, char chr))
 {
     struct lw_terminal_vt100 *this;
@@ -970,7 +970,7 @@ void lw_terminal_vt100_read_str(struct lw_terminal_vt100 *this, char *buffer)
     lw_terminal_read_str(this->lw_terminal, buffer);
 }
 
-void lw_terminal_this_destroy(struct lw_terminal_vt100 *this)
+void lw_terminal_vt100_destroy(struct lw_terminal_vt100 *this)
 {
     lw_terminal_destroy(this->lw_terminal);
     free(this->screen);
