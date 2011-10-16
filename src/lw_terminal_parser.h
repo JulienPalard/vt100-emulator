@@ -194,9 +194,9 @@ struct lw_terminal
                                             char *seq, char chr);
 };
 
-struct lw_terminal *lw_terminal_init(void);
-void lw_terminal_default_unimplemented(struct lw_terminal* this, char *seq, char chr);
-void lw_terminal_read(struct lw_terminal *this, char c);
-void lw_terminal_read_str(struct lw_terminal *this, char *c);
-void lw_terminal_destroy(struct lw_terminal* this);
+struct lw_terminal *lw_terminal_parser_init(void);
+void lw_terminal_parser_default_unimplemented(struct lw_terminal* this, char *seq, char chr);
+void lw_terminal_parser_read(struct lw_terminal *this, char c);
+void lw_terminal_parser_read_str(struct lw_terminal *this, char *c);
+void lw_terminal_parser_destroy(struct lw_terminal* this);
 #endif

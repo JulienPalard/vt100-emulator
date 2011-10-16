@@ -926,7 +926,7 @@ struct lw_terminal_vt100 *lw_terminal_vt100_init(void *user_data,
     this->y = 0;
     this->modes = MASK_DECANM;
     this->top_line = 0;
-    this->lw_terminal = lw_terminal_init();
+    this->lw_terminal = lw_terminal_parser_init();
     if (this->lw_terminal == NULL)
         goto free_tabulations;
     this->lw_terminal->user_data = this;
@@ -967,12 +967,12 @@ free_this:
 
 void lw_terminal_vt100_read_str(struct lw_terminal_vt100 *this, char *buffer)
 {
-    lw_terminal_read_str(this->lw_terminal, buffer);
+    lw_terminal_parser_read_str(this->lw_terminal, buffer);
 }
 
 void lw_terminal_vt100_destroy(struct lw_terminal_vt100 *this)
 {
-    lw_terminal_destroy(this->lw_terminal);
+    lw_terminal_parser_destroy(this->lw_terminal);
     free(this->screen);
     free(this->frozen_screen);
     free(this);

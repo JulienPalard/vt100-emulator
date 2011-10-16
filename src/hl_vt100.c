@@ -133,7 +133,7 @@ void vt100_headless_fork(struct vt100_headless *this,
     }
     else
     {
-        this->term = lw_terminal_vt100_init(this, lw_terminal_default_unimplemented);
+        this->term = lw_terminal_vt100_init(this, lw_terminal_parser_default_unimplemented);
         this->term->master_write = master_write;
         ioctl(this->master, TIOCSWINSZ, &winsize);
         main_loop(this);

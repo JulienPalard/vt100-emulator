@@ -5,14 +5,14 @@
 
 #include "lw_terminal_parser.h"
 
-static void lw_terminal_push(struct lw_terminal *this, char c)
+static void lw_terminal_parser_push(struct lw_terminal *this, char c)
 {
     if (this->stack_ptr >= TERM_STACK_SIZE)
         return ;
     this->stack[this->stack_ptr++] = c;
 }
 
-static void lw_terminal_parse_params(struct lw_terminal *this)
+static void lw_terminal_parser_parse_params(struct lw_terminal *this)
 {
     unsigned int i;
     int got_something;
@@ -38,9 +38,9 @@ static void lw_terminal_parse_params(struct lw_terminal *this)
     this->argc += got_something;
 }
 
-static void lw_terminal_call_CSI(struct lw_terminal *this, char c)
+static void lw_terminal_parser_call_CSI(struct lw_terminal *this, char c)
 {
-    lw_terminal_parse_params(this);
+    lw_terminal_parser_parse_params(this);
     if (((term_action *)&this->callbacks.csi)[c - '0'] == NULL)
     {
         if (this->unimplemented != NULL)
@@ -55,7 +55,7 @@ leave:
     this->argc = 0;
 }
 
-static void lw_terminal_call_ESC(struct lw_terminal *this, char c)
+static void lw_terminal_parser_call_ESC(struct lw_terminal *this, char c)
 {
     if (((term_action *)&this->callbacks.esc)[c - '0'] == NULL)
     {
@@ -70,7 +70,7 @@ leave:
     this->argc = 0;
 }
 
-static void lw_terminal_call_HASH(struct lw_terminal *this, char c)
+static void lw_terminal_parser_call_HASH(struct lw_terminal *this, char c)
 {
     if (((term_action *)&this->callbacks.hash)[c - '0'] == NULL)
     {
@@ -85,7 +85,7 @@ leave:
     this->argc = 0;
 }
 
-static void lw_terminal_call_GSET(struct lw_terminal *this, char c)
+static void lw_terminal_parser_call_GSET(struct lw_terminal *this, char c)
 {
     if (c < '0' || c > 'B'
         || ((term_action *)&this->callbacks.scs)[c - '0'] == NULL)
@@ -116,7 +116,7 @@ leave:
 **  |   |   \_ term_call_GSET()
 **  \_ term->write()
 */
-void lw_terminal_read(struct lw_terminal *this, char c)
+void lw_terminal_parser_read(struct lw_terminal *this, char c)
 {
     if (this->state == INIT)
     {
@@ -136,41 +136,41 @@ void lw_terminal_read(struct lw_terminal *this, char c)
         else if (c == ')')
             this->state = G1SET;
         else if (c >= '0' && c <= 'z')
-            lw_terminal_call_ESC(this, c);
+            lw_terminal_parser_call_ESC(this, c);
         else this->write(this, c);
     }
     else if (this->state == HASH)
     {
         if (c >= '0' && c <= '9')
-            lw_terminal_call_HASH(this, c);
+            lw_terminal_parser_call_HASH(this, c);
         else
             this->write(this, c);
     }
     else if (this->state == G0SET || this->state == G1SET)
     {
-        lw_terminal_call_GSET(this, c);
+        lw_terminal_parser_call_GSET(this, c);
     }
     else if (this->state == CSI)
     {
         if (c == '?')
             this->flag = '?';
         else if (c == ';' || (c >= '0' && c <= '9'))
-            lw_terminal_push(this, c);
+            lw_terminal_parser_push(this, c);
         else if (c >= '?' && c <= 'z')
-            lw_terminal_call_CSI(this, c);
+            lw_terminal_parser_call_CSI(this, c);
         else
             this->write(this, c);
     }
 }
 
-void lw_terminal_read_str(struct lw_terminal *this, char *c)
+void lw_terminal_parser_read_str(struct lw_terminal *this, char *c)
 {
     while (*c)
-        lw_terminal_read(this, *c++);
+        lw_terminal_parser_read(this, *c++);
 }
 
 #ifndef NDEBUG
-void lw_terminal_default_unimplemented(struct lw_terminal* this, char *seq, char chr)
+void lw_terminal_parser_default_unimplemented(struct lw_terminal* this, char *seq, char chr)
 {
     unsigned int argc;
 
@@ -184,7 +184,7 @@ void lw_terminal_default_unimplemented(struct lw_terminal* this, char *seq, char
     fprintf(stderr, ")%o\n", chr);
 }
 #else
-void lw_terminal_default_unimplemented(struct lw_terminal* this, char *seq, char chr)
+void lw_terminal_parser_default_unimplemented(struct lw_terminal* this, char *seq, char chr)
 {
     this = this;
     seq = seq;
@@ -192,12 +192,12 @@ void lw_terminal_default_unimplemented(struct lw_terminal* this, char *seq, char
 }
 #endif
 
-struct lw_terminal *lw_terminal_init(void)
+struct lw_terminal *lw_terminal_parser_init(void)
 {
     return calloc(1, sizeof(struct lw_terminal));
 }
 
-void lw_terminal_destroy(struct lw_terminal* this)
+void lw_terminal_parser_destroy(struct lw_terminal* this)
 {
     free(this);
 }
