@@ -113,6 +113,11 @@ void master_write(void *user_data, void *buffer, size_t len)
     write(this->master, buffer, len);
 }
 
+const char **vt100_headless_getlines(struct vt100_headless *this)
+{
+    return lw_terminal_vt100_getlines(this->term);
+}
+
 void vt100_headless_fork(struct vt100_headless *this,
                          const char *progname,
                          char *const argv[])

@@ -16,5 +16,6 @@ struct vt100_headless
 
 void vt100_headless_fork(struct vt100_headless *this, const char *progname, char *const argv[]);
 struct vt100_headless *vt100_headless_init(void);
+const char **vt100_headless_getlines(struct vt100_headless *this);
 
 #endif
