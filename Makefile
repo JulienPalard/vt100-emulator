@@ -21,7 +21,7 @@ OBJ_TEST = $(SRC_TEST:.c=.o)
 CC = gcc
 INCLUDE = src
 DEFINE = _GNU_SOURCE
-CFLAGS = -g3 -Wextra -Wstrict-prototypes -Wall -ansi -pedantic -I$(INCLUDE)
+CFLAGS = -DNDEBUG -g3 -Wextra -Wstrict-prototypes -Wall -ansi -pedantic -fPIC -I$(INCLUDE)
 LIB = -lutil
 RM = rm -f
 
