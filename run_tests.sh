@@ -26,11 +26,19 @@ EOF
     exit
 fi
 
+make clean
 
 if [ "$1" = c ]
 then
     make && make test
-    /lib/ld-linux.so.2 --library-path . ./test /usr/bin/top
+    if [ -x /lib/ld-linux-*.so.2 ]
+    then
+        echo Using /lib/ld-linux-*.so.2 to run test
+        /lib/ld-linux-*.so.2 --library-path . ./test /usr/bin/top
+    else
+        echo Using /lib/ld-linux.so.2 to run test
+        /lib/ld-linux.so.2 --library-path . ./test /usr/bin/top
+    fi
     exit
 fi
 
