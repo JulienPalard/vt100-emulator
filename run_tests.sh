@@ -1,6 +1,11 @@
 #!/bin/sh
 if [ "$1" = python ]
 then
+    if ! which swig > /dev/null
+    then
+        echo "You should install swig !"
+        exit 1
+    fi
     make python_module
     if [ $? != 0 ]
     then
