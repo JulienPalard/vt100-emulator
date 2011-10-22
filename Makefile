@@ -31,13 +31,21 @@ $(NAME):	$(OBJ)
 test:	$(OBJ_TEST)
 		$(CC) $(OBJ_TEST) -L . -l$(NAME) -o test
 
+python_module:
+		swig -python *.i
+		python setup.py build_ext --inplace
+
 all:
 		@make $(NAME)
 
 .c.o:
 		$(CC) -D $(DEFINE) -c $(CFLAGS) $< -o $(<:.c=.o)
 
-clean:
+clean_python_module:
+		$(RM) *.pyc *.so hl_vt100_wrap.c hl_vt100.py
+		$(RM) -r build
+
+clean:	clean_python_module
 		$(RM) $(LINKERNAME) test src/*~ *~ src/\#*\# src/*.o \#*\# *.o *core
 
 re:		clean all

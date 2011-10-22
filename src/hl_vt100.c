@@ -1,16 +1,19 @@
 #define _XOPEN_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <utmp.h>
 #include <string.h>
 #include <pty.h>
 #include <stdlib.h>
 #include "hl_vt100.h"
 
-struct vt100_headless *vt100_headless_init(void)
+struct vt100_headless *new_vt100_headless(void)
 {
-    return malloc(sizeof(struct vt100_headless));
+    return calloc(1, sizeof(struct vt100_headless));
+}
+
+void delete_vt100_headless(struct vt100_headless *this)
+{
+    free(this);
 }
 
 static void set_non_canonical(struct vt100_headless *this, int fd)
@@ -59,7 +62,7 @@ static void strdump(char *str)
 }
 #endif
 
-static int main_loop(struct vt100_headless *this)
+int vt100_headless_main_loop(struct vt100_headless *this)
 {
     char buffer[4096];
     fd_set rfds;
@@ -100,9 +103,11 @@ static int main_loop(struct vt100_headless *this)
             strdump(buffer);
 #endif
             lw_terminal_vt100_read_str(this->term, buffer);
-            this->changed(this);
+            if (this->changed != NULL)
+                this->changed(this);
         }
     }
+    return EXIT_SUCCESS;
 }
 
 void master_write(void *user_data, void *buffer, size_t len)
@@ -120,14 +125,14 @@ const char **vt100_headless_getlines(struct vt100_headless *this)
 
 void vt100_headless_fork(struct vt100_headless *this,
                          const char *progname,
-                         char *const argv[])
+                         char **argv)
 {
     int child;
     struct winsize winsize;
 
     set_non_canonical(this, 0);
     winsize.ws_row = 24;
-    winsize.ws_col = 24;
+    winsize.ws_col = 80;
     child = forkpty(&this->master, NULL, NULL, NULL);
     if (child == CHILD)
     {
@@ -141,7 +146,6 @@ void vt100_headless_fork(struct vt100_headless *this,
         this->term = lw_terminal_vt100_init(this, lw_terminal_parser_default_unimplemented);
         this->term->master_write = master_write;
         ioctl(this->master, TIOCSWINSZ, &winsize);
-        main_loop(this);
     }
     restore_termios(this, 0);
 }

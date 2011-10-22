@@ -3,6 +3,10 @@
 
 #define CHILD 0
 
+#include <utmp.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <termios.h>
 #include "lw_terminal_vt100.h"
 
 struct vt100_headless
@@ -14,8 +18,10 @@ struct vt100_headless
 };
 
 
-void vt100_headless_fork(struct vt100_headless *this, const char *progname, char *const argv[]);
-struct vt100_headless *vt100_headless_init(void);
+void vt100_headless_fork(struct vt100_headless *this, const char *progname, char **argv);
+int vt100_headless_main_loop(struct vt100_headless *this);
+void delete_vt100_headless(struct vt100_headless *this);
+struct vt100_headless *new_vt100_headless(void);
 const char **vt100_headless_getlines(struct vt100_headless *this);
 
 #endif
