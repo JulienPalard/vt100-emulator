@@ -887,11 +887,13 @@ const char **lw_terminal_vt100_getlines(struct lw_terminal_vt100 *vt100)
 {
     unsigned int y;
 
+    pthread_mutex_lock(&vt100->mutex);
     for (y = 0; y < vt100->height; ++y)
     if (y < vt100->margin_top || y > vt100->margin_bottom)
         vt100->lines[y] = vt100->frozen_screen + FROZEN_SCREEN_PTR(vt100, 0, y);
     else
         vt100->lines[y] = vt100->screen + SCREEN_PTR(vt100, 0, y);
+    pthread_mutex_unlock(&vt100->mutex);
     return (const char **)vt100->lines;
 }
 
@@ -967,7 +969,9 @@ free_this:
 
 void lw_terminal_vt100_read_str(struct lw_terminal_vt100 *this, char *buffer)
 {
+    pthread_mutex_lock(&this->mutex);
     lw_terminal_parser_read_str(this->lw_terminal, buffer);
+    pthread_mutex_unlock(&this->mutex);
 }
 
 void lw_terminal_vt100_destroy(struct lw_terminal_vt100 *this)

@@ -33,20 +33,6 @@ static void restore_termios(struct vt100_headless *this, int fd)
     ioctl(fd, TCSETS, &this->backup);
 }
 
-/* static void debug(struct vt100_headless *this, char *title) */
-/* { */
-/*     unsigned int argc; */
-
-/*     fprintf(stderr, "%s ", title); */
-/*     for (argc = 0; argc < this->term->argc; ++argc) */
-/*     { */
-/*         fprintf(stderr, "%d", this->term->argv[argc]); */
-/*         if (argc != this->term->argc - 1) */
-/*             fprintf(stderr, ", "); */
-/*     } */
-/*     fprintf(stderr, "\n"); */
-/* } */
-
 #ifndef NDEBUG
 static void strdump(char *str)
 {
@@ -62,6 +48,11 @@ static void strdump(char *str)
 }
 #endif
 
+void vt100_headless_stop(struct vt100_headless *this)
+{
+    this->should_quit = 1;
+}
+
 int vt100_headless_main_loop(struct vt100_headless *this)
 {
     char buffer[4096];
@@ -69,7 +60,7 @@ int vt100_headless_main_loop(struct vt100_headless *this)
     int retval;
     ssize_t read_size;
 
-    while (42)
+    while (!this->should_quit)
     {
         FD_ZERO(&rfds);
         FD_SET(this->master, &rfds);

@@ -56,5 +56,6 @@ struct vt100_headless
         void fork(const char *progname, char **argv);
         char **getlines();
         int main_loop();
+        void stop();
     }
 };

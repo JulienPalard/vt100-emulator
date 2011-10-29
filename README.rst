@@ -1,3 +1,12 @@
+INSTALL
+=======
+
+Python module
+-------------
+
+Run :
+$ make python_module && su -c 'python setup.py install'
+
 Overview
 ========
 

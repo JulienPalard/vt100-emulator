@@ -32,8 +32,7 @@ test:	$(OBJ_TEST)
 		$(CC) $(OBJ_TEST) -L . -l$(NAME) -o test
 
 python_module:
-		swig -python *.i
-		python setup.py build_ext --inplace
+		swig -python -threads *.i
 
 all:
 		@make $(NAME)

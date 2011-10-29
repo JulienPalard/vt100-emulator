@@ -1,6 +1,7 @@
 #ifndef __LW_TERMINAL_VT100_H__
 #define __LW_TERMINAL_VT100_H__
 
+#include <pthread.h>
 #include "lw_terminal_parser.h"
 
 /*
@@ -64,6 +65,7 @@ struct lw_terminal_vt100
     char         *lines[80];
     void         (*master_write)(void *user_data, void *buffer, size_t len);
     void         *user_data;
+    pthread_mutex_t mutex;
 };
 
 struct lw_terminal_vt100 *lw_terminal_vt100_init(void *user_data,
