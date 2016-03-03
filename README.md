@@ -1,17 +1,31 @@
-INSTALL
-=======
+# vt100 emulator
 
-Python module
--------------
+`vt100-emulator` is a headless
+[vt100](https://fr.wikipedia.org/wiki/VT100) emulator, a bit like any
+terminal you may use daily (like urxvt, xterm, ...) but those you're
+using are NOT headless, they have a graphical interface to interact
+with you, human). Here, `vt100-emulator` is only the underlying a `C`
+and `Python` API to an actual emulator, so you can do everything you
+want with it, like interfacing over TCP, HTTP, automatically testing
+your implementation `malloc` against `top` while running `top` in the
+headless terminal, whatever pleases you.
 
-Run :
-$ make python_module && su -c 'python setup.py install'
+For copyright information, please see the file COPYRIGHT in this
+directory or in the files of the source tree.
 
-Overview
-========
+# INSTALL
 
-lw_terminal_parser, lw_terminal_vt100, and hl_vt100 are three modules used to emulate a vt100 terminal::
+## Python module
 
+Run:
+
+    $ make python_module && su -c 'python setup.py install'
+
+# Code overview
+
+lw_terminal_parser, lw_terminal_vt100, and hl_vt100 are three modules used to emulate a vt100 terminal:
+
+```
                                   -------------
                                   |           |
                                   | Your Code |
@@ -57,43 +71,42 @@ lw_terminal_parser, lw_terminal_vt100, and hl_vt100 are three modules used to em
  lw_terminal_pasrser_read_str | lw_terminal_parser |
  parses, and call callbacks   |                    |
                               ----------------------
+```
 
-lw_terminal_parser
-==================
+## lw_terminal_parser
 
-lw_terminal_parser parses terminal escape sequences, calling callbacks
-when a sequence is sucessfully parsed, read example/parse.c.
+`lw_terminal_parser` parses terminal escape sequences, calling callbacks
+when a sequence is sucessfully parsed, read `example/parse.c`.
 
 Provides :
 
- * struct lw_terminal \*lw_terminal_parser_init(void);
- * void lw_terminal_parser_destroy(struct lw_terminal\* this);
- * void lw_terminal_parser_default_unimplemented(struct lw_terminal\* this, char \*seq, char chr);
- * void lw_terminal_parser_read(struct lw_terminal \*this, char c);
- * void lw_terminal_parser_read_str(struct lw_terminal \*this, char \*c);
+ * `struct lw_terminal *lw_terminal_parser_init(void);`
+ * `void lw_terminal_parser_destroy(struct lw_terminal* this);`
+ * `void lw_terminal_parser_default_unimplemented(struct lw_terminal* this, char *seq, char chr);`
+ * `void lw_terminal_parser_read(struct lw_terminal *this, char c);`
+ * `void lw_terminal_parser_read_str(struct lw_terminal *this, char *c);`
 
 
-lw_terminal_vt100
-=================
+## lw_terminal_vt100
 
-Hooks into a lw_terminal_parser and keep an in-memory state of the
+Hooks into a `lw_terminal_parser` and keep an in-memory state of the
 screen of a vt100.
 
 Provides :
- * struct lw_terminal_vt100 \*lw_terminal_vt100_init(void \*user_data, void (\*unimplemented)(struct lw_terminal\* term_emul, char \*seq, char chr));
- * char lw_terminal_vt100_get(struct lw_terminal_vt100 \*vt100, unsigned int x, unsigned int y);
- * const char \*\*lw_terminal_vt100_getlines(struct lw_terminal_vt100 \*vt100);
- * void lw_terminal_vt100_destroy(struct lw_terminal_vt100 \*this);
- * void lw_terminal_vt100_read_str(struct lw_terminal_vt100 \*this, char \*buffer);
+
+ * `struct lw_terminal_vt100 *lw_terminal_vt100_init(void *user_data, void (*unimplemented)(struct lw_terminal* term_emul, char *seq, char chr));`
+ * `char lw_terminal_vt100_get(struct lw_terminal_vt100 *vt100, unsigned int x, unsigned int y);`
+ * `const char **lw_terminal_vt100_getlines(struct lw_terminal_vt100 *vt100);`
+ * `void lw_terminal_vt100_destroy(struct lw_terminal_vt100 *this);`
+ * `void lw_terminal_vt100_read_str(struct lw_terminal_vt100 *this, char *buffer);`
 
 
-hl_vt100
-========
+## hl_vt100
 
 Forks a program, plug its io to a pseudo terminal and emulate a vt100
-using lw_terminal_vt100.
+using `lw_terminal_vt100`.
 
 Provides :
- * void vt100_headless_fork(struct vt100_headless \*this, const char \*progname, char \*const argv[]);
- * struct vt100_headless \*vt100_headless_init(void);
- * const char \*\*vt100_headless_getlines(struct vt100_headless \*this);
+ * `void vt100_headless_fork(struct vt100_headless *this, const char *progname, char *const argv[]);`
+ * `struct vt100_headless *vt100_headless_init(void);`
+ * `const char **vt100_headless_getlines(struct vt100_headless *this);`
