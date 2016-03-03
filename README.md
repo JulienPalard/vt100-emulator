@@ -17,9 +17,57 @@ directory or in the files of the source tree.
 
 ## Python module
 
+You'll need `swig`, so `apt-get install swig` or whatever works for you.
+
 Run:
 
     $ make python_module && su -c 'python setup.py install'
+
+# Usage using the python wrapper (same methods in C)
+
+```
+>>> import hl_vt100
+>>> import threading
+>>> class Top:
+...     def __init__(self):
+...         self.vt100 = hl_vt100.vt100_headless()
+...         self.vt100.fork('top', ['top'])
+...
+...     def __call__(self):
+...         self.vt100.main_loop()
+...
+...     def __str__(self):
+...         return "\n".join(self.vt100.getlines())
+...
+>>> top = Top()
+>>> thread = threading.Thread(target=top)
+>>> thread.start()
+>>> print(top)
+top - 09:42:43 up 332 days, 23:42, 14 users,  load average: 3.08, 3.41, 3.52
+KiB Mem:  16443168 total, 15865172 used,   577996 free,  1141216 buffers
+KiB Swap:   999420 total,   669960 used,   329460 free.  6097952 cached Mem
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+24237 nobody    20   0 1041352 348040  39116 R  78.8  2.1 142:18.54 redacted
+24078 nobody    20   0 1152024 382592  38948 R  25.8  2.3 355:44.85 for
+24892 nobody    20   0 1182408 434560  40276 S  21.1  2.6 394:06.48 privacy
+24472 nobody    20   0 1153196 380712  39000 S  20.3  2.3 410:51.64 ayah
+23617 nobody    20   0  170048 100072   6376 S  19.5  0.6   8:36.66 python
+23646 nobody    20   0 1095252 367128  39916 R  17.9  2.2 353:48.65 you
+23505 nobody    20   0 1159452 377948  38920 S  17.2  2.3 364:29.40 wont
+24757 nobody    20   0  943848 216084  40028 R  15.6  1.3 231:10.38 know
+23894 nobody    20   0  885740 166600  38724 S  13.3  1.0 195:48.99 what
+24689 nobody    20   0  901152 183240  39780 S  13.3  1.1 192:50.13 eats
+24820 nobody    20   0  937712 232392  39496 S  13.3  1.4 215:25.32 my_cpu
+ 3117 nobody    20   0  402568 351740   5912 S   3.1  2.1   0:03.72 python
+ 3122 mandark   20   0   27052   3040   1184 R   3.1  0.0   0:00.34 top
+23796 nobody    20   0 1069940 347252  39156 S   3.1  2.1 190:37.78 probably
+23503 nobody    20   0  903592 268248  38360 S   1.6  1.6  75:54.32 somethign
+ 5169 root      20   0       0      0      0 S   0.8  0.0  45:05.66 kworker/0:1
+15324 root      20   0   63848   9768   1628 S   0.8  0.1 437:02.99 supervisord
+16382 root      20   0       0      0      0 S   0.8  0.0  11:29.88 kworker/2:0
+18278 root      20   0       0      0      0 S   0.8  0.0 184:02.23 kworker/1:0
+```
 
 # Code overview
 
