@@ -4,22 +4,22 @@
 .\" other parameters are allowed: see man(7), man(1)
 .TH lw_terminal_parser 3 2011-09-27
 .SH NAME
-lw_terminal_init, lw_terminal_read, lw_terminal_read_str, lw_terminal_destroy  \- LW Terminal Parser
+lw_terminal_parser_init, lw_terminal_read, lw_terminal_parser_read_str, lw_terminal_destroy  \- LW Terminal Parser
 .SH SYNOPSIS
 .B #include <lw_terminal_parser.h>
 .sp
-.BI "struct lw_terminal *lw_terminal_init(void);"
+.BI "struct lw_terminal *lw_terminal_parser_init(void);"
 .br
 .BI "void lw_terminal_read(struct lw_terminal *" this ", char " c ");"
 .br
-.BI "void lw_terminal_read_str(struct lw_terminal *" this " , char *" c ");"
+.BI "void lw_terminal_parser_read_str(struct lw_terminal *" this " , char *" c ");"
 .br
 .BI "void lw_terminal_destroy(struct lw_terminal* " this ");"
 .SH DESCRIPTION
 lw_terminal_parser is a library to parse escape sequences commonly sent to terminals. The functions in lw_terminal_parser allows you to create, send data, and destroy a terminal parser. The function
-.BR lw_terminal_init ()
+.BR lw_terminal_parser_init ()
 allocates and prepare a new struct lw_terminal for you. Once a lw_terminal initialized you should hook your callbacks for escape sequences and write in lw_terminal->callbacks and lw_terminal->write. The you should call
-.BR lw_terminal_read_str()
+.BR lw_terminal_parser_read_str()
 or
 .BR lw_terminal_read()
 to make the terminal parse them.
@@ -57,13 +57,13 @@ int main(void)
 {
     struct lw_terminal *lw_terminal;
 
-    lw_terminal = lw_terminal_init();
+    lw_terminal = lw_terminal_parser_init();
     if (lw_terminal == NULL)
         return EXIT_FAILURE;
     lw_terminal->write = vt100_write;
     lw_terminal->callbacks.csi.f = csi_f;
     lw_terminal->callbacks.csi.K = csi_K;
-    lw_terminal_read_str(lw_terminal, "\\033[2KHello world !\\033[f");
+    lw_terminal_parser_read_str(lw_terminal, "\\033[2KHello world !\\033[f");
     return EXIT_SUCCESS;
 }
 .fi

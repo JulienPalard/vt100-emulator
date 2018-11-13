@@ -101,7 +101,7 @@ lw_terminal_parser, lw_terminal_vt100, and hl_vt100 are three modules used to em
  Got data from              | |                    | Recieve data from callbacks
  lw_terminal_vt100_read_str | | lw_terminal_vt100  | And store an in-memory
  give it to                 | |                    | state of the vt100 terminal
- lw_terminal_read_str       V ----------------------
+ lw_terminal_parser_read_strV ----------------------
                                  |              ^
                                  |              |
                                  |              |
